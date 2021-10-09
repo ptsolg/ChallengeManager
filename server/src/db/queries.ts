@@ -35,9 +35,9 @@ export async function fetchParticipants(challengeId: number): Promise<Participan
             U.id u_id, U.discord_id u_discord_id, U.name u_name, U.avatar_hash u_avatar_hash,
             (
                 SELECT KH.karma FROM karma_history KH
-		        WHERE KH.user_id = U.id
-		        ORDER BY KH.time DESC
-		        LIMIT 1
+                WHERE KH.user_id = U.id
+                ORDER BY KH.time DESC
+                LIMIT 1
             ) as u_karma
         FROM participant P
         INNER JOIN "user" U ON U.id = P.user_id
