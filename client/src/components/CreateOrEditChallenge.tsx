@@ -52,7 +52,10 @@ export default function CreateOrEditChallenge(props: CreateOrEditChallengeProps)
                 </div>
                 <div className="col-sm-10">
                     <div className="card card-body">
-                        <form>
+                        <form onSubmit={(event) => {
+                            event.preventDefault();
+                            props.onSubmit(challenge);
+                        }}>
                             <div className="row mb-3">
                                 <div className="col-sm-4">
                                     <label className="mb-2" htmlFor="name">Challenge Name</label>
@@ -61,12 +64,13 @@ export default function CreateOrEditChallenge(props: CreateOrEditChallengeProps)
                                         onChange={update}
                                         className="form-control mb-3"
                                         type="text"
-                                        value={challenge.name} />
+                                        value={challenge.name}
+                                        required />
                                     <div className="form-check form-switch">
                                         <label className="form-check-label" htmlFor="allowHidden">Allow hidden titles</label>
                                         <input
                                             id="allowHidden"
-                                            onClick={switchAllowHidden}
+                                            onChange={switchAllowHidden}
                                             className="form-check-input"
                                             type="checkbox"
                                             checked={challenge.allowHidden} />
@@ -92,7 +96,7 @@ export default function CreateOrEditChallenge(props: CreateOrEditChallengeProps)
                                     <div className="border rounded h-100 p-2" dangerouslySetInnerHTML={{ __html: preview }}></div>
                                 </div>
                             </div>
-                            <button onClick={() => props.onSubmit(challenge)} className="btn btn-primary float-end">
+                            <button type="submit" className="btn btn-primary float-end">
                                 {props.challenge === undefined ? 'Create' : 'Edit'} Challenge
                             </button>
                         </form>

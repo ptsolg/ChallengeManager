@@ -20,3 +20,7 @@ export async function fetchPools(challengeId: number): Promise<Pool[]> {
 export async function fetchRounds(challengeId: number): Promise<Round[]> {
     return api.get(`/challenge/${challengeId}/rounds`).then(x => x.data);
 }
+
+export async function newChallenge(challenge: Challenge): Promise<number> {
+    return api.post('/challenge', challenge, { withCredentials: true }).then(x => x.data['id']);
+}

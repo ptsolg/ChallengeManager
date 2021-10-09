@@ -29,6 +29,17 @@ export async function fetchChallenge(id: number): Promise<Challenge | null> {
         .then(x => x == null ? null : challengeFromRow(x));
 }
 
+export async function createChallenge(c: Challenge): Promise<Challenge> {
+    return db.oneFirst(sql`
+        INSERT INTO challenge (name, start_time, award_url, allow_hidden, description)
+        VALUES (${c.name}, ${c.startTime.toISOString()}, ${c.awardUrl}, ${c.allowHidden}, ${c.description})
+        RETURNING id`)
+        .then(id => {
+            c.id = id as number;
+            return c;
+        });
+}
+
 export async function fetchParticipants(challengeId: number): Promise<Participant[]> {
     return db.query(sql`
         SELECT P.id, P.failed_round_id,
