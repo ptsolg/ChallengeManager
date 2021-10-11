@@ -57,7 +57,7 @@ export async function fetchParticipants(challengeId: number): Promise<Participan
         ORDER BY u_karma DESC`)
         .then(result => result.rows.map(p => {
             return {
-                id: p['cdid'] as number,
+                id: p['id'] as number,
                 failedRoundId: p['failed_round_id'] as number,
                 user: {
                     id: p['u_id'] as number,
