@@ -39,6 +39,7 @@ export interface Round {
 export interface Challenge {
     id: number,
     name: string,
+    creatorId: number,
     startTime: Date,
     finishTime: Date | null,
     awardUrl: string | null,

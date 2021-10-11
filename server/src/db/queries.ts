@@ -7,6 +7,7 @@ function challengeFromRow(x: QueryResultRowType): Challenge {
     return {
         id: x['id'] as number,
         name: x['name'] as string,
+        creatorId: x['creator_id'] as number,
         startTime: new Date(x['start_time'] as string),
         finishTime: x['finish_time'] ? new Date(x['finish_time'] as string) : null,
         awardUrl: x['award_url'] as string,
@@ -17,16 +18,16 @@ function challengeFromRow(x: QueryResultRowType): Challenge {
 
 export async function fetchChallenges(): Promise<Challenge[]> {
     return db.query(sql`
-        SELECT id, name, start_time, finish_time, award_url, allow_hidden, description FROM challenge
+        SELECT id, name, creator_id, start_time, finish_time, award_url, allow_hidden, description FROM challenge
         ORDER BY start_time DESC`)
         .then(result => result.rows.map(challengeFromRow));
 }
 
-export async function fetchChallenge(id: number): Promise<Challenge | null> {
-    return db.maybeOne(sql`
-        SELECT id, name, start_time, finish_time, award_url, allow_hidden, description FROM challenge
+export async function fetchChallenge(id: number): Promise<Challenge> {
+    return db.one(sql`
+        SELECT id, name, creator_id, start_time, finish_time, award_url, allow_hidden, description FROM challenge
         WHERE id = ${id}`)
-        .then(x => x == null ? null : challengeFromRow(x));
+        .then(challengeFromRow);
 }
 
 export async function createChallenge(c: Challenge): Promise<Challenge> {

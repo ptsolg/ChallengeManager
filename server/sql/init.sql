@@ -13,8 +13,11 @@ CREATE TABLE challenge (
     start_time TIMESTAMP NOT NULL,
     finish_time TIMESTAMP DEFAULT NULL,
     award_url TEXT DEFAULT NULL,
+    creator_id INTEGER NOT NULL,
     allow_hidden BOOLEAN DEFAULT TRUE,
     description TEXT DEFAULT '',
+
+    FOREIGN KEY (creator_id) REFERENCES "user"(id)
 );
 
 CREATE TABLE participant (

@@ -12,6 +12,7 @@ export default function CreateOrEditChallenge(props: CreateOrEditChallengeProps)
     const [challenge, setChallenge] = useState<Challenge>(props.challenge ?? {
         id: -1,
         name: '',
+        creatorId: -1,
         startTime: new Date(Date.now()),
         finishTime: null,
         allowHidden: true,

@@ -1,4 +1,4 @@
-import { Challenge, Participant, Pool, Round } from '../../../common/api/models';
+import { Challenge, ClientChallenge, Participant, Pool, Round } from '../../../common/api/models';
 import api from './api';
 
 export async function fetchChallenges(): Promise<Challenge[]> {
@@ -24,3 +24,7 @@ export async function fetchRounds(challengeId: number): Promise<Round[]> {
 export async function newChallenge(challenge: Challenge): Promise<number> {
     return api.post('/challenge', challenge, { withCredentials: true }).then(x => x.data['id']);
 }
+export async function fetchClientChallenge(challengeId: number): Promise<ClientChallenge> {
+    return api.get(`/challenge/${challengeId}/client`, { withCredentials: true }).then(x => x.data);
+}
+
