@@ -41,6 +41,33 @@ export async function createChallenge(c: Challenge): Promise<Challenge> {
         });
 }
 
+export async function updateChallenge(c: Challenge): Promise<void> {
+    return db.query(sql`
+        UPDATE challenge SET name = ${c.name}, award_url = ${c.awardUrl},
+            allow_hidden = ${c.allowHidden}, description = ${c.description}
+        WHERE id = ${c.id}`).then(_ => { return; });
+}
+
+export async function isChallengeOwner(challengeId: number, userId: number): Promise<boolean> {
+    return db.oneFirst<boolean>(sql`
+        SELECT COALESCE((select creator_id = ${userId} from challenge where id = ${challengeId}), FALSE)`);
+}
+
+export async function hasParticipant(challengeId: number, userId: number): Promise<boolean> {
+    return db.oneFirst<boolean>(sql`SELECT EXISTS(
+        SELECT 1 FROM participant WHERE user_id = ${userId} AND challenge_id = ${challengeId})`);
+}
+
+export async function createParticipant(challengeId: number, userId: number): Promise<void> {
+    return db.query(sql`INSERT INTO participant (challenge_id, user_id) VALUES (${challengeId}, ${userId})`)
+        .then(_ => { return; });
+}
+
+export async function deleteParticipant(challengeId: number, userId: number): Promise<void> {
+    return db.query(sql`DELETE FROM participant WHERE challenge_id = ${challengeId} AND user_id = ${userId}`)
+        .then(_ => { return; });
+}
+
 export async function fetchParticipants(challengeId: number): Promise<Participant[]> {
     return db.query(sql`
         SELECT P.id, P.failed_round_id,

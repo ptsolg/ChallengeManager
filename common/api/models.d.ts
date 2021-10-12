@@ -47,6 +47,11 @@ export interface Challenge {
     description: string,
 }
 
+export interface ClientChallenge extends Challenge {
+    canJoin: boolean,
+    isParticipant: boolean,
+}
+
 export interface Roll {
     userName: string,
     titleName: string,

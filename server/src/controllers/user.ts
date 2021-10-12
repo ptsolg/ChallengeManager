@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { fetchUserById } from '../db/queries';
-import { LoggedInUserRequest } from '../middleware';
+import { LoggedInUserRequest } from '../utils/request';
 
 export async function getUser(req: Request, res: Response): Promise<Response> {
     return fetchUserById(parseInt(req.params['userId'])).then(x => res.json(x));
