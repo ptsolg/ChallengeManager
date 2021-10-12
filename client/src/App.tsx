@@ -4,6 +4,7 @@ import { User } from '../../common/api/models';
 import { login, logout } from './api/auth';
 import { fetchCurrentUser } from './api/user';
 import Header from './components/layout/Header';
+import EditChallengePage from './pages/EditChallengePage';
 import IndexPage from './pages/IndexPage';
 import NewChallengePage from './pages/NewChallengePage';
 import OverviewPage from './pages/OverviewPage';
@@ -42,13 +43,16 @@ export default function App(): JSX.Element {
                     <PoolsPage />
                 </Route>
                 <Route path="/challenge/:challengeId(\d+)">
-                    <OverviewPage />
+                    <OverviewPage user={user} />
                 </Route>
                 <Route path="/new-challenge">
                     <NewChallengePage />
                 </Route>
+                <Route path="/edit-challenge/:challengeId(\d+)">
+                    <EditChallengePage />
+                </Route>
                 <Route path="/">
-                    <IndexPage />
+                    <IndexPage user={user} />
                 </Route>
             </Switch>
         </Router>

@@ -24,7 +24,19 @@ export async function fetchRounds(challengeId: number): Promise<Round[]> {
 export async function newChallenge(challenge: Challenge): Promise<number> {
     return api.post('/challenge', challenge, { withCredentials: true }).then(x => x.data['id']);
 }
+
+export async function editChallenge(challenge: Challenge): Promise<void> {
+    return api.put(`/challenge/${challenge.id}`, challenge, { withCredentials: true }).then(_ => { return; });
+}
+
 export async function fetchClientChallenge(challengeId: number): Promise<ClientChallenge> {
     return api.get(`/challenge/${challengeId}/client`, { withCredentials: true }).then(x => x.data);
 }
 
+export async function joinChallenge(challengeId: number): Promise<void> {
+    return api.get(`/challenge/${challengeId}/join`, { withCredentials: true }).then(_ => { return; });
+}
+
+export async function leaveChallenge(challengeId: number): Promise<void> {
+    return api.get(`/challenge/${challengeId}/leave`, { withCredentials: true }).then(_ => { return; });
+}

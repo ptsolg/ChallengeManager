@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import showdown from 'showdown';
 import { Challenge } from '../../../common/api/models';
 import DefaultLayout from '../components/layout/DefaultLayout';
@@ -9,7 +9,7 @@ interface CreateOrEditChallengeProps {
 }
 
 export default function CreateOrEditChallenge(props: CreateOrEditChallengeProps): JSX.Element {
-    const [challenge, setChallenge] = useState<Challenge>(props.challenge ?? {
+    const [challenge, setChallenge] = useState<Challenge>({
         id: -1,
         name: '',
         creatorId: -1,
@@ -21,14 +21,14 @@ export default function CreateOrEditChallenge(props: CreateOrEditChallengeProps)
     });
     const [preview, setPreview] = useState('');
 
-    async function updateLivePreview(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    async function updateLivePreview(text: string) {
         const converter = new showdown.Converter({
             smoothLivePreview: true
         });
-        setPreview(converter.makeHtml(e.target.value));
+        setPreview(converter.makeHtml(text));
         setChallenge({
             ...challenge,
-            description: e.target.value
+            description: text
         });
     }
 
@@ -45,6 +45,13 @@ export default function CreateOrEditChallenge(props: CreateOrEditChallengeProps)
             [e.target.id]: e.target.value
         });
     }
+
+    useEffect(() => {
+        if (props.challenge) {
+            setChallenge(props.challenge);
+            updateLivePreview(props.challenge.description);
+        }
+    }, [props.challenge]);
 
     return (
         <DefaultLayout>
@@ -88,7 +95,7 @@ export default function CreateOrEditChallenge(props: CreateOrEditChallengeProps)
                                 <div className="col-sm-6">
                                     <textarea
                                         id="description"
-                                        onChange={updateLivePreview}
+                                        onChange={(e) => { updateLivePreview(e.target.value); }}
                                         className="form-control"
                                         rows={6}
                                         value={challenge.description} />

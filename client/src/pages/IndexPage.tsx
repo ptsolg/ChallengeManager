@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import { Challenge } from '../../../common/api/models';
 import { fetchChallenges } from '../api/challenge';
 import DefaultLayout from '../components/layout/DefaultLayout';
+import { PageProps } from '../utils/page';
 
-export default function IndexPage(): JSX.Element {
+export default function IndexPage({ user }: PageProps): JSX.Element {
     const [challenges, setChallenges] = useState<Challenge[]>([]);
     useEffect(() => {
         fetchChallenges().then(setChallenges);
@@ -17,10 +18,13 @@ export default function IndexPage(): JSX.Element {
                 </div>
                 <div className="col-sm-8">
                     <div className="card card-body">
-                        <Link to="/new-challenge" className="btn btn-success w-25 ms-auto me-0">
-                            New Challenge
-                        </Link>
-
+                        {
+                            user === undefined
+                                ? null
+                                : <Link to="/new-challenge" className="btn btn-success w-25 ms-auto me-0">
+                                    New Challenge
+                                </Link>
+                        }
                         <table className="table table-hover">
                             <thead>
                                 <tr>

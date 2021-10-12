@@ -1,18 +1,48 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import showdown from 'showdown';
-import { Challenge } from '../../../common/api/models';
-import { fetchChallenge } from '../api/challenge';
+import { ClientChallenge, User } from '../../../common/api/models';
+import { fetchClientChallenge, joinChallenge, leaveChallenge } from '../api/challenge';
 import DefaultLayout from '../components/layout/DefaultLayout';
-import { getPageParams } from '../utils/page';
+import { getPageParams, PageProps } from '../utils/page';
 
-export default function OverviewPage(): JSX.Element {
+function createActionButton(user: User, cc: ClientChallenge,
+    onJoin: () => Promise<void>, onLeave: () => void): JSX.Element {
+    const css = "btn float-end w-25";
+    if (cc?.isParticipant) {
+        const enabled = cc.finishTime === null;
+        return (<button className={`${css} ${enabled ? 'btn-danger' : 'btn-secondary'}`}
+            onClick={onLeave} disabled={!enabled}>Leave</button>);
+    } else {
+        return (<button className={`${css} ${cc?.canJoin ? 'btn-success' : 'btn-secondary'}`}
+            onClick={onJoin} disabled={!cc?.canJoin}>Join</button>);
+    }
+}
+
+export default function OverviewPage({ user }: PageProps): JSX.Element {
     const challengeId = getPageParams().challengeId;
     const converter = new showdown.Converter();
-    const [challenge, setChallenge] = useState<Challenge>();
+    const [challenge, setChallenge] = useState<ClientChallenge>();
 
-    useEffect(() => {
-        fetchChallenge(challengeId).then(setChallenge);
-    }, []);
+    async function update() {
+        fetchClientChallenge(challengeId).then(setChallenge);
+    }
+
+    async function join() {
+        if (challenge !== undefined)
+            joinChallenge(challenge.id).then(_ => setChallenge({
+                ...challenge,
+                canJoin: false,
+                isParticipant: true
+            }));
+    }
+
+    async function leave() {
+        if (challenge !== undefined)
+            leaveChallenge(challenge.id).then(_ => update());
+    }
+
+    useEffect(() => { update(); }, []);
 
     return (
         <DefaultLayout challengeId={challengeId}>
@@ -40,6 +70,14 @@ export default function OverviewPage(): JSX.Element {
                                     </div>
                                 </dd>
                             </dl>
+
+                            {user && challenge ? createActionButton(user, challenge, join, leave) : null}
+                            {
+                                user && challenge && user.id == challenge.creatorId && challenge.finishTime === null
+                                    ? <Link to={`/edit-challenge/${challenge.id}`}
+                                        className="btn btn-primary w-25 float-end me-2">Edit</Link>
+                                    : null
+                            }
                         </div>
                     </div>
                 </div>
