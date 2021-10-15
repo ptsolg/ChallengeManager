@@ -12,7 +12,7 @@ export default function EditChallengePage(): JSX.Element {
     const [challenge, setChallenge] = useState<Challenge>();
 
     async function save(challenge: Challenge) {
-        editChallenge(challenge).then(_ => history.push(`/challenge/${challenge.id}`));
+        editChallenge(challenge).then(c => history.push(`/challenge/${c.id}`));
     }
 
     useEffect(() => {

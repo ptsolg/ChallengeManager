@@ -1,26 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { Round, Roll } from '../../../common/api/models';
-import { fetchRounds } from '../api/challenge';
-import { fetchRolls } from '../api/round';
+import { Round, RollExt } from '../../../common/api/models';
+import { fetchRolls, fetchRounds } from '../api/challenge';
 import DefaultLayout from '../components/layout/DefaultLayout';
 import { getPageParams } from '../utils/page';
 
 export default function RoundsPage(): JSX.Element {
     const challengeId = getPageParams().challengeId;
     const [rounds, setRounds] = useState<Round[]>([]);
-    const [rolls, setRolls] = useState<Roll[]>([]);
-    const [selectedRoundId, setSelectedRoundId] = useState(-1);
+    const [rolls, setRolls] = useState<RollExt[]>([]);
+    const [selectedRoundNum, setSelectedRoundNum] = useState(-1);
 
-    function selectRound(roundId: number) {
-        setSelectedRoundId(roundId);
-        fetchRolls(roundId).then(setRolls);
+    function selectRound(roundNum: number) {
+        setSelectedRoundNum(roundNum);
+        fetchRolls(challengeId, roundNum).then(setRolls);
     }
 
     useEffect(() => {
         fetchRounds(challengeId).then(x => {
             setRounds(x);
             if (x.length > 0)
-                selectRound(x[0].id);
+                selectRound(x[0].num);
         });
     }, []);
 
@@ -34,10 +33,9 @@ export default function RoundsPage(): JSX.Element {
                             <ul className="pagination flex-wrap">
                                 {
                                     rounds.map(x =>
-                                        <li className={`page-item ${x.id === selectedRoundId ? 'active' : ''}`}>
+                                        <li className={`page-item ${x.num === selectedRoundNum ? 'active' : ''}`}>
                                             <button
-                                                id={x.id.toString()}
-                                                onClick={(e: React.MouseEvent<HTMLButtonElement>) => selectRound(parseInt(e.currentTarget.id))}
+                                                onClick={() => selectRound(x.num)}
                                                 className="page-link">
                                                 {x.num + 1}
                                             </button>
@@ -60,8 +58,8 @@ export default function RoundsPage(): JSX.Element {
                                     rolls.map((x, i) =>
                                         <tr>
                                             <td scope="row">{i}</td>
-                                            <td>{x.userName}</td>
-                                            <td>{x.titleName}</td>
+                                            <td>{x.watcher.name}</td>
+                                            <td>{x.title.name}</td>
                                             <td>{x.score}</td>
                                         </tr>)
                                 }

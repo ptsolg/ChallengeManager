@@ -9,7 +9,7 @@ export default function NewChallengePage(): JSX.Element {
     const history = useHistory();
 
     async function createChallenge(challenge: Challenge) {
-        newChallenge(challenge).then(id => history.push(`/challenge/${id}`));
+        newChallenge(challenge).then(c => history.push(`/challenge/${c.id}`));
     }
 
     return (

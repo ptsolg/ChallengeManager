@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Participant } from '../../../common/api/models';
+import { ParticipantExt } from '../../../common/api/models';
 import { fetchParticipants } from '../api/challenge';
 import DefaultLayout from '../components/layout/DefaultLayout';
 import { getPageParams } from '../utils/page';
 
 export default function ParticipantsPage(): JSX.Element {
     const challengeId = getPageParams().challengeId;
-    const [participants, setParticipants] = useState<Participant[]>([]);
+    const [participants, setParticipants] = useState<ParticipantExt[]>([]);
     useEffect(() => {
         fetchParticipants(challengeId).then(setParticipants);
     }, []);
@@ -32,7 +32,7 @@ export default function ParticipantsPage(): JSX.Element {
                                         <tr>
                                             <td scope="row">{i}</td>
                                             <td>{x.user.name}</td>
-                                            <td>{x.user.karma}</td>
+                                            <td>{x.karma}</td>
                                         </tr>)
                                 }
                             </tbody>

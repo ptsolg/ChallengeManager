@@ -1,47 +1,51 @@
 import React, { useEffect, useState } from 'react';
-import { Pool, Title } from '../../../common/api/models';
-import { fetchPools } from '../api/challenge';
-import { fetchTitles } from '../api/pool';
+import { ClientChallenge, CreateTitleParams, Pool, TitleExt } from '../../../common/api/models';
+import { fetchClientChallenge, fetchPools, newPool, newTitle } from '../api/challenge';
+import AddPool from '../components/AddPool';
+import AddTitle from '../components/AddTitle';
 import DefaultLayout from '../components/layout/DefaultLayout';
-import { getPageParams } from '../utils/page';
+import PoolSelector from '../components/PoolSelector';
+import { getPageParams, PageProps } from '../utils/page';
 
-export default function PoolsPage(): JSX.Element {
+
+export default function PoolsPage({ user }: PageProps): JSX.Element {
     const challengeId = getPageParams().challengeId;
+    const [titles, setTitles] = useState<TitleExt[]>([]);
+    const [challenge, setChallenge] = useState<ClientChallenge>();
     const [pools, setPools] = useState<Pool[]>([]);
-    const [selectedPoolId, setSelectedPoolId] = useState<number>(-1);
-    const [titles, setTitles] = useState<Title[]>([]);
+    const [selectedPoolName, setSelectedPoolName] = useState('');
 
-    function selectPool(poolId: number) {
-        setSelectedPoolId(poolId);
-        fetchTitles(poolId).then(setTitles);
+    async function addPool(pool: Pool) {
+        newPool(challengeId, pool)
+            .then(pool => setPools([...pools, pool]))
+            .catch(_ => {
+                // todo
+            });
+    }
+
+    async function addTitle(poolName: string, title: CreateTitleParams) {
+        newTitle(challengeId, poolName, title).then(t => {
+            if (poolName == selectedPoolName)
+                setTitles([...titles, t]);
+        }).catch(_ => {
+            // todo
+        });
     }
 
     useEffect(() => {
-        fetchPools(challengeId).then(x => {
-            setPools(x);
-            if (x.length > 1)
-                selectPool(x[0].id);
-        });
+        fetchPools(challengeId).then(setPools);
+        fetchClientChallenge(challengeId).then(setChallenge);
     }, []);
 
     return (
         <DefaultLayout challengeId={challengeId}>
             <div className="row">
                 <div className="col-sm-4">
-                    <div className="card card-body">
-                        <div className="list-group">
-                            {
-                                pools.map(x =>
-                                    <button
-                                        id={x.id.toString()}
-                                        type="button"
-                                        onClick={(e: React.MouseEvent<HTMLButtonElement>) => selectPool(parseInt(e.currentTarget.id))}
-                                        className={`list-group-item list-group-item-action ${selectedPoolId == x.id ? 'active' : ''}`}>
-                                        {x.name}
-                                    </button>)
-                            }
-                        </div>
+                    <div className="card card-body mb-4">
+                        <PoolSelector challengeId={challengeId} pools={pools} setTitles={setTitles} setPoolName={setSelectedPoolName} />
+                        <AddPool user={user} challenge={challenge} onAdd={addPool} />
                     </div>
+                    <AddTitle pools={pools} challenge={challenge} onAdd={addTitle} />
                 </div>
                 <div className="col-sm-8">
                     <div className="card card-body">
@@ -59,8 +63,8 @@ export default function PoolsPage(): JSX.Element {
                                     titles.map((x, i) =>
                                         <tr>
                                             <td scope="row">{i}</td>
-                                            <td><a href={x.url}>{x.name}</a></td>
-                                            <td>{x.userName}</td>
+                                            <td><a href={x.url ?? ''}>{x.name}</a></td>
+                                            <td>{x.proposer.name}</td>
                                             <td>{x.duration}</td>
                                         </tr>)
                                 }

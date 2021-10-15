@@ -1,20 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import showdown from 'showdown';
-import { Challenge } from '../../../common/api/models';
+import { CreateChallengeParams } from '../../../common/api/models';
 import DefaultLayout from '../components/layout/DefaultLayout';
 
 interface CreateOrEditChallengeProps {
-    challenge?: Challenge,
-    onSubmit(challenge: Challenge): void
+    challenge?: CreateChallengeParams,
+    onSubmit(params: CreateChallengeParams): void
 }
 
 export default function CreateOrEditChallenge(props: CreateOrEditChallengeProps): JSX.Element {
-    const [challenge, setChallenge] = useState<Challenge>({
-        id: -1,
+    const [challenge, setChallenge] = useState<CreateChallengeParams>({
         name: '',
-        creatorId: -1,
-        startTime: new Date(Date.now()),
-        finishTime: null,
         allowHidden: true,
         description: '',
         awardUrl: null
@@ -48,8 +44,8 @@ export default function CreateOrEditChallenge(props: CreateOrEditChallengeProps)
 
     useEffect(() => {
         if (props.challenge) {
-            setChallenge(props.challenge);
             updateLivePreview(props.challenge.description);
+            setChallenge(props.challenge);
         }
     }, [props.challenge]);
 

@@ -40,7 +40,7 @@ export default function App(): JSX.Element {
                     <ParticipantsPage />
                 </Route>
                 <Route path="/challenge/:challengeId(\d+)/pools">
-                    <PoolsPage />
+                    <PoolsPage user={user} />
                 </Route>
                 <Route path="/challenge/:challengeId(\d+)">
                     <OverviewPage user={user} />
