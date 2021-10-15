@@ -218,7 +218,7 @@ export class Challenge implements api.Challenge {
                 return {
                     ...Participant.fromRow(row, 'p_'),
                     user: User.fromRow(row, 'u_'),
-                    karma: nonNull(row, 'karma'),
+                    karma: maybeNull(row, 'karma'),
                 };
             }));
     }

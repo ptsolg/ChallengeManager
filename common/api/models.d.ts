@@ -33,7 +33,7 @@ export interface Participant {
 
 export interface ParticipantExt extends Participant {
     user: User,
-    karma: number,
+    karma: number | null,
 }
 
 export interface CreatePoolParams {
