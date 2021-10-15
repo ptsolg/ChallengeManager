@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { getDiscordToken, getDiscordUser, DiscordError } from '../utils/discord';
-import { fetchOrCreateUser } from '../db/queries';
 import { createToken } from '../utils/auth';
+import { User } from '../db/models';
 
 export async function handleLogin(req: Request, res: Response): Promise<Response> {
     if (!('code' in req.body)) {
@@ -9,7 +9,7 @@ export async function handleLogin(req: Request, res: Response): Promise<Response
     }
     return getDiscordToken(req.body['code'])
         .then(getDiscordUser)
-        .then(fetchOrCreateUser)
+        .then(User.fetchOrCreate)
         .then(u => {
             const token = createToken(u.id);
             return res
@@ -26,5 +26,5 @@ export async function handleLogin(req: Request, res: Response): Promise<Response
 }
 
 export async function handleLogout(req: Request, res: Response): Promise<Response> {
-    return res.clearCookie('auth').json({ message: "ok" });
+    return res.clearCookie('auth').json({ message: 'ok' });
 }
