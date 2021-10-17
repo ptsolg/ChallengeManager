@@ -47,7 +47,7 @@ CREATE TABLE title (
     name TEXT NOT NULL,
     url TEXT,
     is_used BOOLEAN NOT NULL DEFAULT FALSE,
-    is_hidden BOOLEAN,
+    is_hidden BOOLEAN NOT NULL DEFAULT FALSE,
     score FLOAT,
     duration INTEGER,
     difficulty FLOAT,
