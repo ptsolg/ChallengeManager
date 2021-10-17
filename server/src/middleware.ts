@@ -13,12 +13,12 @@ export async function checkLoggedIn(req: LoggedInUserRequest, res: Response, nex
     return next();
 }
 
-export async function checkCanEditChallenge(req: LoggedInUserRequest, res: Response, next: NextFunction): Promise<void> {
+export async function checkCanManageChallenge(req: LoggedInUserRequest, res: Response, next: NextFunction): Promise<void> {
     return checkLoggedIn(req, res, async () => {
         const c = await Challenge.fetch(getCid(req));
         return c.creatorId === getUid(req)
             ? next()
-            : res.status(401).json({ message: "You don't have permissions to edit this challenge" });
+            : res.status(401).json({ message: "You don't have permissions to manage this challenge" });
     });
 }
 
