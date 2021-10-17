@@ -28,7 +28,7 @@ function getChallengeParams(req: Request): api.CreateChallengeParams {
     };
 }
 
-export async function editChallenge(req: Request, res: JsonResponse<Message>): Promise<Response> {
+export async function editChallenge(req: Request, res: JsonResponse<Challenge>): Promise<Response> {
     const c = await Challenge.fetch(getCid(req));
     const params = getChallengeParams(req);
     c.name = params.name;
@@ -36,7 +36,7 @@ export async function editChallenge(req: Request, res: JsonResponse<Message>): P
     c.allowHidden = params.allowHidden;
     c.description = params.description;
     await c.update();
-    return res.json(Message.ok());
+    return res.json(c);
 }
 
 export function getParticipants(req: Request, res: JsonResponse<api.ParticipantExt[]>): Promise<Response> {
