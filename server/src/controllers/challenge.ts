@@ -28,7 +28,7 @@ function getChallengeParams(req: Request): api.CreateChallengeParams {
     };
 }
 
-export async function editChallenge(req: Request, res: Response): Promise<Response> {
+export async function editChallenge(req: Request, res: JsonResponse<Message>): Promise<Response> {
     const c = await Challenge.fetch(getCid(req));
     const params = getChallengeParams(req);
     c.name = params.name;
@@ -36,7 +36,7 @@ export async function editChallenge(req: Request, res: Response): Promise<Respon
     c.allowHidden = params.allowHidden;
     c.description = params.description;
     await c.update();
-    return res.json({ message: 'ok' });
+    return res.json(Message.ok());
 }
 
 export function getParticipants(req: Request, res: JsonResponse<api.ParticipantExt[]>): Promise<Response> {
@@ -78,22 +78,22 @@ export async function getClientChallenge(req: Request, res: JsonResponse<api.Cli
     });
 }
 
-export async function joinChallenge(req: LoggedInUserRequest, res: Response): Promise<Response> {
+export async function joinChallenge(req: LoggedInUserRequest, res: JsonResponse<Message>): Promise<Response> {
     const c = await Challenge.fetch(getCid(req));
     const err = await checkCanJoinChallenge(c, getUid(req));
     if (err !== undefined)
-        return res.status(400).json({ message: err });
+        return res.status(400).json(new Message(err));
     await c.createParticipant(getUid(req));
-    return res.json({ message: 'ok' });
+    return res.json(Message.ok());
 }
 
-export async function leaveChallenge(req: LoggedInUserRequest, res: Response): Promise<Response> {
+export async function leaveChallenge(req: LoggedInUserRequest, res: JsonResponse<Message>): Promise<Response> {
     const c = await Challenge.fetch(getCid(req));
     const uid = getUid(req);
     if (!(await c.hasParticipant(uid)))
-        return res.status(400).json({ message: 'User is not participant' });
+        return res.status(400).json(new Message('User is not participant'));
     await c.deleteParticipant(uid);
-    return res.json({ message: 'ok' });
+    return res.json(Message.ok());
 }
 
 export function getPoolTitles(req: Request, res: JsonResponse<api.TitleExt[]>): Promise<Response> {

@@ -11,4 +11,8 @@ export class Message {
     constructor(msg: string) {
         this.message = msg;
     }
+
+    static ok(): Message {
+        return new Message('ok');
+    }
 }
