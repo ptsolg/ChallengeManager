@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import * as api from '../../../common/api/models';
 import { Challenge, User } from '../db/models';
 import { verifyToken } from '../utils/auth';
+import { Error } from '../utils/error';
 import { getCid, getPoolName, getUid, LoggedInUserRequest, maybeNull, nonNull } from '../utils/request';
 import { JsonResponse, Message } from '../utils/response';
 
@@ -81,8 +82,7 @@ export async function getClientChallenge(req: Request, res: JsonResponse<api.Cli
 export async function joinChallenge(req: LoggedInUserRequest, res: JsonResponse<Message>): Promise<Response> {
     const c = await Challenge.fetch(getCid(req));
     const err = await checkCanJoinChallenge(c, getUid(req));
-    if (err !== undefined)
-        return res.status(400).json(new Message(err));
+    Error.throwIf(err !== undefined, 400, err as string);
     await c.createParticipant(getUid(req));
     return res.json(Message.ok());
 }
@@ -90,8 +90,7 @@ export async function joinChallenge(req: LoggedInUserRequest, res: JsonResponse<
 export async function leaveChallenge(req: LoggedInUserRequest, res: JsonResponse<Message>): Promise<Response> {
     const c = await Challenge.fetch(getCid(req));
     const uid = getUid(req);
-    if (!(await c.hasParticipant(uid)))
-        return res.status(400).json(new Message('User is not participant'));
+    Error.throwIf(!(await c.hasParticipant(uid)), 400, 'User is not participant');
     await c.deleteParticipant(uid);
     return res.json(Message.ok());
 }
@@ -109,13 +108,11 @@ function getPoolParams(req: Request): api.CreatePoolParams {
     };
 }
 
-export async function newPool(req: Request, res: JsonResponse<api.Pool | Message>): Promise<Response> {
+export async function newPool(req: Request, res: JsonResponse<api.Pool>): Promise<Response> {
     const params = getPoolParams(req);
     const c = await Challenge.fetch(getCid(req));
-    if (await c.hasPool(params.name))
-        return res.status(400).json(new Message(`Pool "${params.name}" already exists`));
-    const p = await c.addPool(params.name);
-    return res.json(p);
+    Error.throwIf(await c.hasPool(params.name), 400, `Pool "${params.name}" already exists`);
+    return res.json(await c.addPool(params.name));
 }
 
 function getTitleParams(req: Request): api.CreateTitleParams {
@@ -128,13 +125,12 @@ function getTitleParams(req: Request): api.CreateTitleParams {
 
 export async function newTitle(
     req: LoggedInUserRequest,
-    res: JsonResponse<api.TitleExt | Message>
+    res: JsonResponse<api.TitleExt>
 ): Promise<Response> {
     const params = getTitleParams(req);
     const c = await Challenge.fetch(getCid(req));
     const p = await c.fetchPool(getPoolName(req));
-    if (await c.hasTitle(params.name))
-        return res.status(400).json(new Message(`Title "${params.name}" already exists"`));
+    Error.throwIf(await c.hasTitle(params.name), 400, `Title "${params.name}" already exists"`);
     // todo: isHidden, score, duration, etc...
     const u = await User.fetch(getUid(req));
     const t = await p.addTitle(u.id, params.name, params.url,

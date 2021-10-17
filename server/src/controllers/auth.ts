@@ -3,11 +3,10 @@ import { getDiscordToken, getDiscordUser, DiscordError } from '../utils/discord'
 import { createToken } from '../utils/auth';
 import { User } from '../db/models';
 import { JsonResponse, Message } from '../utils/response';
+import { Error } from '../utils/error';
 
 export async function handleLogin(req: Request, res: JsonResponse<Message>): Promise<Response> {
-    if (!('code' in req.body)) {
-        return res.json(new Message('Missing "code" property'));
-    }
+    Error.throwIf(!('code' in req.body), 400, 'Missing "code" property');
     return getDiscordToken(req.body['code'])
         .then(getDiscordUser)
         .then(User.fetchOrCreate)
@@ -22,7 +21,7 @@ export async function handleLogin(req: Request, res: JsonResponse<Message>): Pro
         })
         .catch((err: DiscordError) => {
             console.error(`Discord oauth2 error: ${err.message}`);
-            return res.status(400).json(new Message("Couldn't authenticate"));
+            throw new Error(400, "Couldn't authenticate");
         });
 }
 

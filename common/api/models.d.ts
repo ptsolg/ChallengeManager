@@ -1,3 +1,7 @@
+export interface Message {
+    message: string;
+}
+
 export interface User {
     id: number;
     discordId: string;

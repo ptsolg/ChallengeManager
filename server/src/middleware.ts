@@ -1,47 +1,44 @@
-import { NextFunction } from 'express';
+import { NextFunction, Response } from 'express';
 import { Challenge } from './db/models';
 import { verifyToken } from './utils/auth';
+import { Error } from './utils/error';
 import { getCid, getUid, LoggedInUserRequest } from './utils/request';
-import { JsonResponse, Message } from './utils/response';
 
-export async function checkLoggedIn(
+export function checkLoggedIn(
     req: LoggedInUserRequest,
-    res: JsonResponse<Message>,
+    _: Response,
     next: NextFunction
-): Promise<void> {
+): void {
     const token = verifyToken(req);
-    if (token === undefined) {
-        res.status(401).json(new Message('User is not logged id'));
-        return;
-    }
+    if (token === undefined)
+        throw new Error(401, 'User is not logged in');
     req.userId = token.id;
     return next();
 }
 
-export async function checkCanManageChallenge(
+export function checkCanManageChallenge(
     req: LoggedInUserRequest,
-    res: JsonResponse<Message>,
+    res: Response,
     next: NextFunction
-): Promise<void> {
+): void {
     return checkLoggedIn(req, res, async () => {
         const c = await Challenge.fetch(getCid(req));
-        return c.creatorId === getUid(req)
-            ? next()
-            : res.status(401).json(new Message("You don't have permissions to manage this challenge"));
+        Error.throwIf(c.creatorId !== getUid(req),
+            401, "You don't have permissions to manage this challenge");
+        return next();
     });
 }
 
-export async function checkCanAddTitle(
+export function checkCanAddTitle(
     req: LoggedInUserRequest,
-    res: JsonResponse<Message>,
+    res: Response,
     next: NextFunction
-): Promise<void> {
+): void {
     return checkLoggedIn(req, res, async () => {
         const c = await Challenge.fetch(getCid(req));
-        if (await c.hasStarted())
-            return res.status(401).json(new Message('Challenge has already started'));
-        if (!(c.hasParticipant(getUid(req))))
-            return res.status(401).json(new Message('You are not participating in this challenge'));
+        Error.throwIf(await c.hasStarted(), 400, 'Challenge has already started');
+        Error.throwIf(!(await c.hasParticipant(getUid(req))),
+            400, 'You are not participating in this challenge');
         return next();
     });
 }

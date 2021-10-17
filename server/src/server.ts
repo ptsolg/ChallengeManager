@@ -1,9 +1,10 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import router from './router';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import { env } from './env';
+import { Error } from './utils/error';
 
 const corsOptions = {
     origin: 'http://localhost:3000',
@@ -26,6 +27,13 @@ function parseDates(object: any) {
     }
 }
 
+function handleError(err: unknown, req: Request, res: Response, _: NextFunction): Response {
+    if (err instanceof Error) {
+        return res.status(err.responseCode).json({ message: err.message });
+    }
+    return res.status(500).json({ message: 'Internal server error' });
+}
+
 const app = express();
 app.use(cors(corsOptions))
     .use(bodyParser.json())
@@ -35,6 +43,7 @@ app.use(cors(corsOptions))
         next();
     })
     .use('/api', router)
+    .use(handleError)
     .listen(env['PORT'], () => {
         console.log('ok');
     });
