@@ -1,5 +1,5 @@
-import axios, { AxiosError } from "axios";
-import { env } from "../env";
+import axios, { AxiosError } from 'axios';
+import { env } from '../env';
 
 export interface DiscordToken {
     access_token: string,
