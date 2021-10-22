@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { DatabaseTransactionConnectionType } from 'slonik';
 import * as api from '../../../common/api/models';
 import { db } from '../db/db';
 import { Challenge, Title, User } from '../db/models';
@@ -146,4 +147,46 @@ export function getRolls(req: Request, res: JsonResponse<api.RollExt[]>): Promis
     return Challenge.fetch(db, getCid(req))
         .then(c => c.fetchRolls(parseInt(req.params['roundNum'])))
         .then(x => res.json(x));
+}
+
+function getStartRoundParams(req: Request): api.StartRoundParams {
+    return {
+        poolName: nonNull(req, 'poolName'),
+        finishTime: nonNull(req, 'finishTime'),
+    };
+}
+
+export async function startRound(
+    transaction: DatabaseTransactionConnectionType,
+    req: Request,
+    res: JsonResponse<api.RoundExt>
+): Promise<Response> {
+    const params = getStartRoundParams(req);
+    const c = await Challenge.fetch(transaction, getCid(req));
+    const lastRound = await c.fetchLastRound();
+    Error.throwIf(lastRound !== undefined && !lastRound.isFinished, 400, `Finish round ${lastRound?.num} first`);
+    const pool = await c.fetchPool(params.poolName);
+    const participants = await c.fetchParticipantsExt();
+    Error.throwIf(participants.length === 0, 400, 'Not enough participants to start a round');
+    const titles = await pool.fetchUnusedTitles();
+    Error.throwIf(titles.length < participants.length, 400, `Not enough titles in "${pool.name}" pool`);
+    const round = await c.addRound(params.finishTime);
+
+    const popRandomTitle = (): Title => {
+        const n = Math.floor(Math.random() * titles.length);
+        return titles.splice(n, 1)[0];
+    };
+
+    const randTitles = [...Array(participants.length).keys()].map(_ => popRandomTitle());
+    const rolls: api.RollExt[] = [];
+    for (const [p, t] of randTitles.map<[api.ParticipantExt, Title]>((t, i) => [participants[i], t])) {
+        rolls.push({
+            ...await round.addRoll(p.id, t.id),
+            watcher: p.user,
+            title: t,
+        });
+        t.isUsed = true;
+        await t.update();
+    }
+    return res.json({ ...round, rolls: rolls });
 }

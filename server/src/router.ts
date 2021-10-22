@@ -1,8 +1,18 @@
 import { Router } from 'express';
-import { getChallenges, getChallenge, getParticipants, getPools, getRounds, newChallenge, joinChallenge, getClientChallenge, leaveChallenge, editChallenge, getPoolTitles, newPool, newTitle, getRolls } from './controllers/challenge';
+import { getChallenges, getChallenge, getParticipants, getPools, getRounds, newChallenge, joinChallenge, getClientChallenge, leaveChallenge, editChallenge, getPoolTitles, newPool, newTitle, getRolls, startRound } from './controllers/challenge';
 import { handleLogin, handleLogout } from './controllers/auth';
 import { getLoggedInUser, getUser } from './controllers/user';
 import { checkCanAddTitle, checkCanManageChallenge, checkLoggedIn } from './middleware';
+import { db } from './db/db';
+import { DatabaseTransactionConnectionType } from 'slonik';
+
+function withTransaction<T, Req, Res>(
+    f: (db: DatabaseTransactionConnectionType, req: Req, res: Res) => T
+) {
+    return (req: Req, res: Res) => {
+        return db.transaction(async (transaction) => f(transaction, req, res));
+    };
+}
 
 export default Router()
     .get('/challenge', getChallenges)
@@ -19,6 +29,7 @@ export default Router()
     .get('/challenge/:challengeId(\\d+)/join', checkLoggedIn, joinChallenge)
     .get('/challenge/:challengeId(\\d+)/leave', checkLoggedIn, leaveChallenge)
     .get('/challenge/:challengeId(\\d+)/client', getClientChallenge)
+    .post('/challenge/:challengeId(\\d+)/startRound', checkCanManageChallenge, withTransaction(startRound))
     .get('/user/me', checkLoggedIn, getLoggedInUser)
     .get('/user/:userId(\\d+)', getUser)
     .post('/auth/login', handleLogin)
