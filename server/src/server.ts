@@ -27,12 +27,20 @@ function parseDates(object: any) {
     }
 }
 
-function handleError(err: unknown, req: Request, res: Response, _: NextFunction): Response {
+async function handleError(err: unknown, req: Request, res: Response, _: NextFunction): Promise<Response> {
     if (err instanceof Error) {
         return res.status(err.responseCode).json({ message: err.message });
     }
     return res.status(500).json({ message: 'Internal server error' });
 }
+
+process.on('unhandledRejection', (err) => {
+    console.error(err);
+});
+
+process.on('uncaughtException', (err) => {
+    console.error(err);
+});
 
 const app = express();
 app.use(cors(corsOptions))
