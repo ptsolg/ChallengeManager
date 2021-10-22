@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ClientChallenge, CreateTitleParams, Pool } from '../../../common/api/models';
+import DropdownPoolSelector from './DropdownPoolSelector';
 
 interface AddTitleProps {
     pools: Pool[],
@@ -16,10 +17,7 @@ export default function AddTitle({ pools, challenge, onAdd }: AddTitleProps): JS
         url: '',
         isHidden: false,
     });
-    const [pool, setPool] = useState({
-        id: -1,
-        name: ''
-    });
+    const [poolName, setPoolName] = useState<string>('');
 
     async function update(e: React.ChangeEvent<HTMLInputElement>) {
         setTitle({
@@ -29,8 +27,8 @@ export default function AddTitle({ pools, challenge, onAdd }: AddTitleProps): JS
     }
 
     useEffect(() => {
-        if (pools.length > 0 && pool.id == -1)
-            setPool({ id: pools[0].id, name: pools[0].name });
+        if (pools.length > 0 && poolName === '')
+            setPoolName(pools[0].name);
     }, [pools]);
 
     return (
@@ -39,20 +37,12 @@ export default function AddTitle({ pools, challenge, onAdd }: AddTitleProps): JS
             <input className="form-control mb-2" id="name" onChange={update} required />
             <label className="mb-2" htmlFor="url">Title URL:</label>
             <input className="form-control mb-2" id="url" onChange={update} required />
-            <label className="mb-2" htmlFor="url">Pool:</label>
-            <div className="input-group mb-2">
-                <input type="text" className="form-control" disabled value={pool.name} />
-                <div className="input-group-append">
-                    <button className="btn btn-primary dropdown-toggle dropdown-toggle-split" id="dropdownButton" data-bs-toggle="dropdown"></button>
-                    <ul className="dropdown-menu" aria-labelledby="dropdownButton">
-                        {pools.map(x => <li className="dropdown-item" onClick={() => setPool({ id: x.id, name: x.name })}>{x.name}</li>)}
-                    </ul>
-                </div>
-            </div>
+            <label className="mb-2">Pool:</label>
+            <DropdownPoolSelector className="mb-2" pools={pools} onSelect={(pool) => setPoolName(pool.name)} />
             <div className="row">
                 <div className="col-8"></div>
                 <div className="col-4">
-                    <button className="btn btn-primary w-100" onClick={() => onAdd(pool.name, title)}>Add</button>
+                    <button className="btn btn-primary w-100" onClick={() => onAdd(poolName, title)}>Add</button>
                 </div>
             </div>
         </div>
