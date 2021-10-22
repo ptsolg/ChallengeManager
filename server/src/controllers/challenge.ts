@@ -1,23 +1,24 @@
 import { Request, Response } from 'express';
 import * as api from '../../../common/api/models';
-import { Challenge, User } from '../db/models';
+import { db } from '../db/db';
+import { Challenge, Title, User } from '../db/models';
 import { verifyToken } from '../utils/auth';
 import { Error } from '../utils/error';
 import { getCid, getPoolName, getUid, LoggedInUserRequest, maybeNull, nonNull } from '../utils/request';
 import { JsonResponse, Message } from '../utils/response';
 
 export function getChallenges(req: Request, res: JsonResponse<api.Challenge[]>): Promise<Response> {
-    return Challenge.fetchAll().then(x => res.json(x));
+    return Challenge.fetchAll(db).then(x => res.json(x));
 }
 
 export function getPools(req: Request, res: JsonResponse<api.Pool[]>): Promise<Response> {
-    return Challenge.fetch(getCid(req))
+    return Challenge.fetch(db, getCid(req))
         .then(c => c.fetchPools())
         .then(x => res.json(x));
 }
 
 export function getChallenge(req: Request, res: JsonResponse<api.Challenge>): Promise<Response> {
-    return Challenge.fetch(getCid(req)).then(c => res.json(c));
+    return Challenge.fetch(db, getCid(req)).then(c => res.json(c));
 }
 
 function getChallengeParams(req: Request): api.CreateChallengeParams {
@@ -30,7 +31,7 @@ function getChallengeParams(req: Request): api.CreateChallengeParams {
 }
 
 export async function editChallenge(req: Request, res: JsonResponse<Challenge>): Promise<Response> {
-    const c = await Challenge.fetch(getCid(req));
+    const c = await Challenge.fetch(db, getCid(req));
     const params = getChallengeParams(req);
     c.name = params.name;
     c.awardUrl = params.awardUrl;
@@ -41,20 +42,20 @@ export async function editChallenge(req: Request, res: JsonResponse<Challenge>):
 }
 
 export function getParticipants(req: Request, res: JsonResponse<api.ParticipantExt[]>): Promise<Response> {
-    return Challenge.fetch(getCid(req))
+    return Challenge.fetch(db, getCid(req))
         .then(c => c.fetchParticipantsExt())
         .then(x => res.json(x));
 }
 
 export function getRounds(req: Request, res: JsonResponse<api.Round[]>): Promise<Response> {
-    return Challenge.fetch(getCid(req))
+    return Challenge.fetch(db, getCid(req))
         .then(c => c.fetchRounds())
         .then(x => res.json(x));
 }
 
 export function newChallenge(req: LoggedInUserRequest, res: JsonResponse<api.Challenge>): Promise<Response> {
     const params = getChallengeParams(req);
-    return Challenge.create(params.name, params.awardUrl,
+    return Challenge.create(db, params.name, params.awardUrl,
         getUid(req), params.allowHidden, params.description).then(x => res.json(x));
 }
 
@@ -71,7 +72,7 @@ async function checkCanJoinChallenge(c: Challenge, uid: number): Promise<string 
 
 export async function getClientChallenge(req: Request, res: JsonResponse<api.ClientChallenge>): Promise<Response> {
     const token = verifyToken(req);
-    const c = await Challenge.fetch(getCid(req));
+    const c = await Challenge.fetch(db, getCid(req));
     return res.json({
         ...c,
         canJoin: token !== undefined && (await checkCanJoinChallenge(c, token.id)) === undefined,
@@ -80,15 +81,15 @@ export async function getClientChallenge(req: Request, res: JsonResponse<api.Cli
 }
 
 export async function joinChallenge(req: LoggedInUserRequest, res: JsonResponse<Message>): Promise<Response> {
-    const c = await Challenge.fetch(getCid(req));
+    const c = await Challenge.fetch(db, getCid(req));
     const err = await checkCanJoinChallenge(c, getUid(req));
     Error.throwIf(err !== undefined, 400, err as string);
-    await c.createParticipant(getUid(req));
+    await c.addParticipant(getUid(req));
     return res.json(Message.ok());
 }
 
 export async function leaveChallenge(req: LoggedInUserRequest, res: JsonResponse<Message>): Promise<Response> {
-    const c = await Challenge.fetch(getCid(req));
+    const c = await Challenge.fetch(db, getCid(req));
     const uid = getUid(req);
     Error.throwIf(!(await c.hasParticipant(uid)), 400, 'User is not participant');
     await c.deleteParticipant(uid);
@@ -96,7 +97,7 @@ export async function leaveChallenge(req: LoggedInUserRequest, res: JsonResponse
 }
 
 export function getPoolTitles(req: Request, res: JsonResponse<api.TitleExt[]>): Promise<Response> {
-    return Challenge.fetch(getCid(req))
+    return Challenge.fetch(db, getCid(req))
         .then(c => c.fetchPool(getPoolName(req)))
         .then(p => p.fetchTitles())
         .then(x => res.json(x));
@@ -110,7 +111,7 @@ function getPoolParams(req: Request): api.CreatePoolParams {
 
 export async function newPool(req: Request, res: JsonResponse<api.Pool>): Promise<Response> {
     const params = getPoolParams(req);
-    const c = await Challenge.fetch(getCid(req));
+    const c = await Challenge.fetch(db, getCid(req));
     Error.throwIf(await c.hasPool(params.name), 400, `Pool "${params.name}" already exists`);
     return res.json(await c.addPool(params.name));
 }
@@ -128,21 +129,21 @@ export async function newTitle(
     res: JsonResponse<api.TitleExt>
 ): Promise<Response> {
     const params = getTitleParams(req);
-    const c = await Challenge.fetch(getCid(req));
+    const c = await Challenge.fetch(db, getCid(req));
     const p = await c.fetchPool(getPoolName(req));
     Error.throwIf(await c.hasTitle(params.name), 400, `Title "${params.name}" already exists"`);
     // todo: isHidden, score, duration, etc...
-    const u = await User.fetch(getUid(req));
-    const t = await p.addTitle(u.id, params.name, params.url,
+    const participant = await c.fetchParticipant(getUid(req));
+    const t = await p.addTitle(participant.id, params.name, params.url,
         params.isHidden, null, null, null, null);
     return res.json({
         ...t,
-        proposer: await User.fetch(getUid(req))
+        proposer: await User.fetch(db, getUid(req))
     });
 }
 
 export function getRolls(req: Request, res: JsonResponse<api.RollExt[]>): Promise<Response> {
-    return Challenge.fetch(getCid(req))
+    return Challenge.fetch(db, getCid(req))
         .then(c => c.fetchRolls(parseInt(req.params['roundNum'])))
         .then(x => res.json(x));
 }

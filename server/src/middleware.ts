@@ -1,4 +1,5 @@
 import { NextFunction, Response } from 'express';
+import { db } from './db/db';
 import { Challenge } from './db/models';
 import { verifyToken } from './utils/auth';
 import { Error } from './utils/error';
@@ -22,7 +23,7 @@ export function checkCanManageChallenge(
     next: NextFunction
 ): void {
     return checkLoggedIn(req, res, async () => {
-        const c = await Challenge.fetch(getCid(req));
+        const c = await Challenge.fetch(db, getCid(req));
         Error.throwIf(c.creatorId !== getUid(req),
             401, "You don't have permissions to manage this challenge");
         return next();
@@ -35,7 +36,7 @@ export function checkCanAddTitle(
     next: NextFunction
 ): void {
     return checkLoggedIn(req, res, async () => {
-        const c = await Challenge.fetch(getCid(req));
+        const c = await Challenge.fetch(db, getCid(req));
         Error.throwIf(await c.hasStarted(), 400, 'Challenge has already started');
         Error.throwIf(!(await c.hasParticipant(getUid(req))),
             400, 'You are not participating in this challenge');

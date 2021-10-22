@@ -1,6 +1,5 @@
-import { QueryResultRowType, sql } from 'slonik';
+import { CommonQueryMethodsType, QueryResultRowType, sql } from 'slonik';
 import { DiscordUser } from '../utils/discord';
-import { db } from './db';
 import * as api from '../../../common/api/models';
 
 function nonNull<T>(x: QueryResultRowType, key: string): T {
@@ -39,7 +38,19 @@ class Columns {
     }
 }
 
-export class User implements api.User {
+class Relation {
+    // Make _db lambda to avoid exposing it to JSON
+    private _db: () => CommonQueryMethodsType;
+    constructor(db: CommonQueryMethodsType) {
+        this._db = () => db;
+    }
+
+    protected get db() {
+        return this._db();
+    }
+}
+
+export class User extends Relation implements api.User {
     static COLS = new Columns(['id', 'discord_id', 'color', 'name', 'avatar_hash']);
     id: number;
     discordId: string;
@@ -47,7 +58,15 @@ export class User implements api.User {
     name: string;
     avatarHash: string | null;
 
-    constructor(id: number, discordId: string, color: string, name: string, avatarHash: string | null) {
+    constructor(
+        db: CommonQueryMethodsType,
+        id: number,
+        discordId: string,
+        color: string,
+        name: string,
+        avatarHash: string | null
+    ) {
+        super(db);
         this.id = id;
         this.discordId = discordId;
         this.color = color;
@@ -55,8 +74,8 @@ export class User implements api.User {
         this.avatarHash = avatarHash;
     }
 
-    static fromRow(row: QueryResultRowType, p = ''): User {
-        return new User(
+    static fromRow(db: CommonQueryMethodsType, row: QueryResultRowType, p = ''): User {
+        return new User(db,
             nonNull(row, p + 'id'),
             nonNull(row, p + 'discord_id'),
             nonNull(row, p + 'color'),
@@ -64,42 +83,42 @@ export class User implements api.User {
             maybeNull(row, p + 'avatar_hash'));
     }
 
-    static fetch(id: number): Promise<User> {
+    static fetch(db: CommonQueryMethodsType, id: number): Promise<User> {
         return db.one(sql`SELECT ${this.COLS.join()} FROM "user" WHERE id = ${id}`)
-            .then(User.fromRow);
+            .then(x => User.fromRow(db, x));
     }
 
-    static fetchByDiscordId(discordId: string): Promise<User> {
+    static fetchByDiscordId(db: CommonQueryMethodsType, discordId: string): Promise<User> {
         return db.one(sql`SELECT ${this.COLS.join()} FROM "user" WHERE discord_id = ${discordId}`)
-            .then(User.fromRow);
+            .then(x => User.fromRow(db, x));
     }
 
-    private static create(u: DiscordUser): Promise<User> {
+    private static create(db: CommonQueryMethodsType, u: DiscordUser): Promise<User> {
         const color = '#FFFFFF';
         const name = `${u.username}#${u.discriminator}`;
         return db.oneFirst<number>(sql`
             INSERT INTO "user" (discord_id, color, name, avatar_hash)
             VALUES (${u.id}, ${color}, ${name}, ${u.avatar})
             RETURNING id`)
-            .then(id => new User(id, u.id, color, name, u.avatar));
+            .then(id => new User(db, id, u.id, color, name, u.avatar));
     }
 
     private update(u: DiscordUser): Promise<void> {
-        return db.query(sql`
+        return this.db.query(sql`
             UPDATE "user" SET
                 name = ${`${u.username}#${u.discriminator}`},
                 avatar_hash = ${u.avatar}
             WHERE id = ${this.id}`).then(_ => { return; });
     }
 
-    static fetchOrCreate(user: DiscordUser): Promise<User> {
-        return this.fetchByDiscordId(user.id)
-            .catch(_ => User.create(user))
+    static fetchOrCreate(db: CommonQueryMethodsType, user: DiscordUser): Promise<User> {
+        return User.fetchByDiscordId(db, user.id)
+            .catch(_ => User.create(db, user))
             .then(u => u.update(user).then(_ => u));
     }
 }
 
-export class Challenge implements api.Challenge {
+export class Challenge extends Relation implements api.Challenge {
     static COLS = new Columns(['id', 'name', 'start_time', 'finish_time',
         'award_url', 'creator_id', 'allow_hidden', 'description']);
     id: number;
@@ -112,6 +131,7 @@ export class Challenge implements api.Challenge {
     description: string;
 
     constructor(
+        db: CommonQueryMethodsType,
         id: number,
         name: string,
         startTime: Date,
@@ -121,6 +141,7 @@ export class Challenge implements api.Challenge {
         allowHidden: boolean,
         description: string,
     ) {
+        super(db);
         this.id = id;
         this.name = name;
         this.startTime = startTime;
@@ -131,8 +152,8 @@ export class Challenge implements api.Challenge {
         this.description = description;
     }
 
-    static fromRow(row: QueryResultRowType): Challenge {
-        return new Challenge(
+    static fromRow(db: CommonQueryMethodsType, row: QueryResultRowType): Challenge {
+        return new Challenge(db,
             nonNull(row, 'id'),
             nonNull(row, 'name'),
             new Date(nonNull(row, 'start_time')),
@@ -145,18 +166,20 @@ export class Challenge implements api.Challenge {
             nonNull(row, 'description'));
     }
 
-    static fetch(id: number): Promise<Challenge> {
+    static fetch(db: CommonQueryMethodsType, id: number): Promise<Challenge> {
         return db.one(sql`SELECT ${this.COLS.join()} FROM challenge WHERE id = ${id}`)
-            .then(Challenge.fromRow);
+            .then(x => Challenge.fromRow(db, x));
     }
 
-    static fetchAll(): Promise<Challenge[]> {
+    static fetchAll(db: CommonQueryMethodsType): Promise<Challenge[]> {
         return db.query(sql`
             SELECT ${this.COLS.join()} FROM challenge
-            ORDER BY start_time DESC`).then(result => result.rows.map(Challenge.fromRow));
+            ORDER BY start_time DESC`)
+            .then(result => result.rows.map(row => Challenge.fromRow(db, row)));
     }
 
     static create(
+        db: CommonQueryMethodsType,
         name: string,
         awardUrl: string | null,
         creatorId: number,
@@ -169,12 +192,12 @@ export class Challenge implements api.Challenge {
             VALUES (${name}, ${startTime.toISOString()}, ${awardUrl},
                 ${creatorId}, ${allowHidden}, ${description})
             RETURNING id`)
-            .then(id => new Challenge(id, name, startTime, null, awardUrl,
+            .then(id => new Challenge(db, id, name, startTime, null, awardUrl,
                 creatorId, allowHidden, description));
     }
 
     hasStarted(): Promise<boolean> {
-        return db.oneFirst<number>(sql`
+        return this.db.oneFirst<number>(sql`
             SELECT COUNT(1) FROM challenge C
             INNER JOIN round R ON R.challenge_id = C.id
             WHERE C.id = ${this.id}`)
@@ -182,26 +205,34 @@ export class Challenge implements api.Challenge {
     }
 
     hasTitle(name: string): Promise<boolean> {
-        return db.oneFirst<boolean>(sql`SELECT EXISTS(
+        return this.db.oneFirst<boolean>(sql`SELECT EXISTS(
             SELECT 1 FROM title T
             JOIN pool P ON P.id = T.pool_id
             WHERE P.challenge_id = ${this.id} AND T.name = ${name})`);
     }
 
     hasParticipant(userId: number): Promise<boolean> {
-        return db.oneFirst<boolean>(sql`SELECT EXISTS(
+        return this.db.oneFirst<boolean>(sql`SELECT EXISTS(
             SELECT 1 FROM participant WHERE user_id = ${userId} AND challenge_id = ${this.id})`);
     }
 
     update(): Promise<void> {
-        return db.query(sql`
+        return this.db.query(sql`
             UPDATE challenge SET name = ${this.name}, award_url = ${this.awardUrl},
                 allow_hidden = ${this.allowHidden}, description = ${this.description}
             WHERE id = ${this.id}`).then(_ => { return; });
     }
 
+    fetchParticipant(userId: number): Promise<Participant> {
+        return this.db.one(sql`
+            SELECT ${Participant.COLS.join()}
+            FROM participant
+            WHERE challenge_id = ${this.id} AND user_id = ${userId}`)
+            .then(x => Participant.fromRow(x));
+    }
+
     fetchParticipantsExt(): Promise<api.ParticipantExt[]> {
-        return db.query(sql`
+        return this.db.query(sql`
             SELECT
                 ${Participant.COLS.join('P', 'p_')},
                 ${User.COLS.join('U', 'u_')},
@@ -217,14 +248,14 @@ export class Challenge implements api.Challenge {
             .then(result => result.rows.map(row => {
                 return {
                     ...Participant.fromRow(row, 'p_'),
-                    user: User.fromRow(row, 'u_'),
+                    user: User.fromRow(this.db, row, 'u_'),
                     karma: maybeNull(row, 'karma'),
                 };
             }));
     }
 
-    createParticipant(userId: number): Promise<Participant> {
-        return db.oneFirst<number>(sql`
+    addParticipant(userId: number): Promise<Participant> {
+        return this.db.oneFirst<number>(sql`
             INSERT INTO participant (challenge_id, user_id)
             VALUES (${this.id}, ${userId})
             RETURNING id`)
@@ -232,45 +263,65 @@ export class Challenge implements api.Challenge {
     }
 
     deleteParticipant(userId: number): Promise<void> {
-        return db.query(sql`DELETE FROM participant WHERE challenge_id = ${this.id} AND user_id = ${userId}`)
+        return this.db.query(sql`DELETE FROM participant WHERE challenge_id = ${this.id} AND user_id = ${userId}`)
             .then(_ => { return; });
     }
 
     addPool(name: string): Promise<Pool> {
-        return db.oneFirst<number>(sql`
+        return this.db.oneFirst<number>(sql`
             INSERT INTO pool (challenge_id, name)
             VALUES (${this.id}, ${name})
-            RETURNING id`).then(id => new Pool(id, this.id, name));
+            RETURNING id`).then(id => new Pool(this.db, id, this.id, name));
     }
 
     hasPool(name: string): Promise<boolean> {
-        return db.oneFirst<boolean>(sql`SELECT EXISTS(
+        return this.db.oneFirst<boolean>(sql`SELECT EXISTS(
             SELECT 1 FROM pool WHERE challenge_id = ${this.id} AND name = ${name})`);
     }
 
     fetchPool(name: string): Promise<Pool> {
-        return db.one(sql`
+        return this.db.one(sql`
             SELECT ${Pool.COLS.join()} FROM pool
-            WHERE challenge_id = ${this.id} AND name = ${name}`).then(Pool.fromRow);
+            WHERE challenge_id = ${this.id} AND name = ${name}`)
+            .then(x => Pool.fromRow(this.db, x));
     }
 
     fetchPools(): Promise<Pool[]> {
-        return db.query(sql`
+        return this.db.query(sql`
             SELECT ${Pool.COLS.join('P')} FROM pool "P"
             INNER JOIN challenge C ON C.id = "P".challenge_id
             WHERE C.id = ${this.id}`)
-            .then(result => result.rows.map(Pool.fromRow));
+            .then(result => result.rows.map(row => Pool.fromRow(this.db, row)));
+    }
+
+    addRound(finish: Date): Promise<Round> {
+        const start = new Date(Date.now());
+        return this.db.one<{ id: number, num: number }>(sql`
+            INSERT INTO round (num, challenge_id, start_time, finish_time)
+                SELECT COUNT(*), ${this.id}, ${start.toISOString()}, ${finish.toISOString()}
+                FROM round
+                WHERE challenge_id = ${this.id}
+            RETURNING id, num`).then(x => new Round(this.db, x.id, x.num, this.id, start, finish, false));
     }
 
     fetchRounds(): Promise<Round[]> {
-        return db.query(sql`
+        return this.db.query(sql`
             SELECT ${Round.COLS.join()} FROM round
             WHERE challenge_id = ${this.id}`)
-            .then(result => result.rows.map(Round.fromRow));
+            .then(result => result.rows.map(row => Round.fromRow(this.db, row)));
+    }
+
+    fetchLastRound(): Promise<Round | undefined> {
+        return this.db.maybeOne(sql`
+            SELECT ${Round.COLS.join()}
+            FROM round
+            WHERE challenge_id = ${this.id}
+            ORDER BY num DESC
+            LIMIT 1`).then(row => row === null ? undefined : Round.fromRow(this.db, row));
     }
 
     fetchRolls(roundNum: number): Promise<api.RollExt[]> {
-        return db.query(sql`
+        return this.db.query(sql`
             SELECT
                 ${Roll.COLS.join('R', 'r_')},
                 ${User.COLS.join('U', 'u_')},
@@ -283,39 +334,41 @@ export class Challenge implements api.Challenge {
             WHERE RND.challenge_id = ${this.id} AND RND.num = ${roundNum}`)
             .then(result => result.rows.map(row => {
                 return {
-                    ...Roll.fromRow(row, 'r_'),
-                    watcher: User.fromRow(row, 'u_'),
-                    title: Title.fromRow(row, 't_'),
+                    ...Roll.fromRow(this.db, row, 'r_'),
+                    watcher: User.fromRow(this.db, row, 'u_'),
+                    title: Title.fromRow(this.db, row, 't_'),
                 };
             }));
     }
 }
 
-export class Pool implements api.Pool {
+export class Pool extends Relation implements api.Pool {
     static COLS = new Columns(['id', 'challenge_id', 'name']);
     id: number;
     challengeId: number;
     name: string;
 
     constructor(
+        db: CommonQueryMethodsType,
         id: number,
         challengeId: number,
         name: string,
     ) {
+        super(db);
         this.id = id;
         this.challengeId = challengeId;
         this.name = name;
     }
 
-    static fromRow(row: QueryResultRowType): Pool {
-        return new Pool(
+    static fromRow(db: CommonQueryMethodsType, row: QueryResultRowType): Pool {
+        return new Pool(db,
             nonNull(row, 'id'),
             nonNull(row, 'challenge_id'),
             nonNull(row, 'name'));
     }
 
     update(): Promise<void> {
-        return db.query(sql`UPDATE pool SET name = ${this.name} WHERE id= ${this.id}`)
+        return this.db.query(sql`UPDATE pool SET name = ${this.name} WHERE id= ${this.id}`)
             .then(_ => { return; });
     }
 
@@ -329,20 +382,20 @@ export class Pool implements api.Pool {
         difficulty: number | null,
         numEpisodes: number | null
     ): Promise<Title> {
-        return db.oneFirst<number>(sql`
+        return this.db.oneFirst<number>(sql`
             INSERT INTO title (pool_id, participant_id, name, url, is_hidden, score,
                 duration, difficulty, num_of_episodes)
             VALUES (${this.id}, ${participantId}, ${name}, ${url}, ${isHidden},
                 ${score}, ${duration}, ${difficulty}, ${numEpisodes})
             RETURNING id`)
             .then(id => {
-                return new Title(id, this.id, participantId, name, url, false, isHidden,
+                return new Title(this.db, id, this.id, participantId, name, url, false, isHidden,
                     score, duration, difficulty, numEpisodes);
             });
     }
 
     fetchTitles(): Promise<api.TitleExt[]> {
-        return db.query(sql`
+        return this.db.query(sql`
             SELECT 
                 ${Title.COLS.join('T', 't_')},
                 ${User.COLS.join('U', 'u_')}
@@ -352,10 +405,18 @@ export class Pool implements api.Pool {
             WHERE "T".pool_id = ${this.id}
         `).then(result => result.rows.map(row => {
             return {
-                ...Title.fromRow(row, 't_'),
-                proposer: User.fromRow(row, 'u_'),
+                ...Title.fromRow(this.db, row, 't_'),
+                proposer: User.fromRow(this.db, row, 'u_'),
             };
         }));
+    }
+
+    fetchUnusedTitles(): Promise<Title[]> {
+        return this.db.query(sql`
+            SELECT ${Title.COLS.join()}
+            FROM title
+            WHERE pool_id = ${this.id} AND is_used = FALSE`)
+            .then(result => result.rows.map(x => Title.fromRow(this.db, x)));
     }
 }
 
@@ -388,7 +449,7 @@ export class Participant implements api.Participant {
 }
 
 
-export class Title implements api.Title {
+export class Title extends Relation implements api.Title {
     static COLS = new Columns(['id', 'pool_id', 'participant_id', 'name',
         'url', 'is_used', 'is_hidden', 'score', 'duration', 'difficulty', 'num_of_episodes']);
     id: number;
@@ -404,6 +465,7 @@ export class Title implements api.Title {
     numEpisodes: number | null;
 
     constructor(
+        db: CommonQueryMethodsType,
         id: number,
         poolId: number,
         participantId: number,
@@ -416,6 +478,7 @@ export class Title implements api.Title {
         difficulty: number | null,
         numEpisodes: number | null,
     ) {
+        super(db);
         this.id = id;
         this.poolId = poolId;
         this.participantId = participantId;
@@ -429,8 +492,8 @@ export class Title implements api.Title {
         this.numEpisodes = numEpisodes;
     }
 
-    static fromRow(row: QueryResultRowType, p = ''): Title {
-        return new Title(
+    static fromRow(db: CommonQueryMethodsType, row: QueryResultRowType, p = ''): Title {
+        return new Title(db,
             nonNull(row, p + 'id'),
             nonNull(row, p + 'pool_id'),
             nonNull(row, p + 'participant_id'),
@@ -445,7 +508,7 @@ export class Title implements api.Title {
     }
 
     update(): Promise<void> {
-        return db.query(sql`
+        return this.db.query(sql`
             UPDATE title SET pool_id = ${this.poolId}, participant_id = ${this.participantId},
                 name = ${this.name}, url = ${this.url}, is_used = ${this.isUsed}, 
                 is_hidden = ${this.isHidden}, score = ${this.score}, duration = ${this.duration},
@@ -454,11 +517,11 @@ export class Title implements api.Title {
     }
 
     delete(): Promise<void> {
-        return db.query(sql`DELETE FROM title WHERE id = ${this.id}`).then(_ => { return; });
+        return this.db.query(sql`DELETE FROM title WHERE id = ${this.id}`).then(_ => { return; });
     }
 }
 
-export class Round implements api.Round {
+export class Round extends Relation implements api.Round {
     static COLS = new Columns(['id', 'num', 'challenge_id', 'start_time',
         'finish_time', 'is_finished']);
     id: number;
@@ -469,6 +532,7 @@ export class Round implements api.Round {
     isFinished: boolean;
 
     constructor(
+        db: CommonQueryMethodsType,
         id: number,
         num: number,
         challengeId: number,
@@ -476,6 +540,7 @@ export class Round implements api.Round {
         finishTime: Date,
         isFinished: boolean,
     ) {
+        super(db);
         this.id = id;
         this.num = num;
         this.challengeId = challengeId;
@@ -484,8 +549,8 @@ export class Round implements api.Round {
         this.isFinished = isFinished;
     }
 
-    static fromRow(row: QueryResultRowType): Round {
-        return new Round(
+    static fromRow(db: CommonQueryMethodsType, row: QueryResultRowType): Round {
+        return new Round(db,
             nonNull(row, 'id'),
             nonNull(row, 'num'),
             nonNull(row, 'challenge_id'),
@@ -495,90 +560,103 @@ export class Round implements api.Round {
     }
 
     update(): Promise<void> {
-        return db.query(sql`
+        return this.db.query(sql`
             UPDATE round SET num = ${this.num}, start_time = ${this.startTime.toISOString()},
                 finish_time = ${this.finishTime.toISOString()}, is_finished = ${this.isFinished}
             WHERE id = ${this.id}`).then(_ => { return; });
     }
+
+    addRoll(participantId: number, titleId: number): Promise<Roll> {
+        return this.db.query(sql`
+            INSERT INTO roll (round_id, participant_id, title_id)
+            VALUES (${this.id}, ${participantId}, ${titleId})`)
+            .then(_ => new Roll(this.db, this.id, participantId, titleId, null));
+    }
 }
 
-export class Roll implements api.Roll {
+export class Roll extends Relation implements api.Roll {
     static COLS = new Columns(['round_id', 'participant_id', 'title_id', 'score']);
     roundId: number;
     participantId: number;
     titleId: number;
-    score: number;
+    score: number | null;
 
     constructor(
+        db: CommonQueryMethodsType,
         roundId: number,
         participantId: number,
         titleId: number,
-        score: number,
+        score: number | null,
     ) {
+        super(db);
         this.roundId = roundId;
         this.participantId = participantId;
         this.titleId = titleId;
         this.score = score;
     }
 
-    static fromRow(row: QueryResultRowType, p = ''): Roll {
-        return new Roll(
+    static fromRow(db: CommonQueryMethodsType, row: QueryResultRowType, p = ''): Roll {
+        return new Roll(db,
             nonNull(row, p + 'round_id'),
             nonNull(row, p + 'participant_id'),
             nonNull(row, p + 'title_id'),
-            nonNull(row, p + 'score'));
+            maybeNull(row, p + 'score'));
     }
 
     update(): Promise<void> {
-        return db.query(sql`
+        return this.db.query(sql`
             UPDATE roll SET score = ${this.score}, title_id = ${this.titleId}
             WHERE round_id = ${this.roundId} AND participant_id = ${this.participantId}`)
             .then(_ => { return; });
     }
 }
 
-export class Award implements api.Award {
+export class Award extends Relation implements api.Award {
     static COLS = new Columns(['participant_id', 'url', 'time']);
     participantId: number;
     url: string | null;
     time: Date;
 
     constructor(
+        db: CommonQueryMethodsType,
         participantId: number,
         url: string | null,
         time: Date,
     ) {
+        super(db);
         this.participantId = participantId;
         this.url = url;
         this.time = time;
     }
 
-    static fromRow(row: QueryResultRowType): Award {
-        return new Award(
+    static fromRow(db: CommonQueryMethodsType, row: QueryResultRowType): Award {
+        return new Award(db,
             nonNull(row, 'participant_id'),
             maybeNull(row, 'url'),
             new Date(nonNull<string>(row, 'time')));
     }
 }
 
-export class KarmaHistory implements api.KarmaHistory {
+export class KarmaHistory extends Relation implements api.KarmaHistory {
     static COLS = new Columns(['user_id', 'karma', 'time']);
     userId: number;
     karma: number;
     time: Date;
 
     constructor(
+        db: CommonQueryMethodsType,
         userId: number,
         karma: number,
         time: Date,
     ) {
+        super(db);
         this.userId = userId;
         this.karma = karma;
         this.time = time;
     }
 
-    static fromRow(row: QueryResultRowType): KarmaHistory {
-        return new KarmaHistory(
+    static fromRow(db: CommonQueryMethodsType, row: QueryResultRowType): KarmaHistory {
+        return new KarmaHistory(db,
             nonNull(row, 'user_id'),
             nonNull(row, 'karma'),
             new Date(nonNull(row, 'time')));

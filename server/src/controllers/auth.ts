@@ -4,12 +4,13 @@ import { createToken } from '../utils/auth';
 import { User } from '../db/models';
 import { JsonResponse, Message } from '../utils/response';
 import { Error } from '../utils/error';
+import { db } from '../db/db';
 
 export async function handleLogin(req: Request, res: JsonResponse<Message>): Promise<Response> {
     Error.throwIf(!('code' in req.body), 400, 'Missing "code" property');
     return getDiscordToken(req.body['code'])
         .then(getDiscordUser)
-        .then(User.fetchOrCreate)
+        .then(u => User.fetchOrCreate(db, u))
         .then(u => {
             const token = createToken(u.id);
             return res
