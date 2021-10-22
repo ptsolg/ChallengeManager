@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Round, RollExt } from '../../../common/api/models';
+import { Round, RollExt, RoundExt } from '../../../common/api/models';
 import { fetchRolls, fetchRounds } from '../api/challenge';
 import DefaultLayout from '../components/layout/DefaultLayout';
+import StartRound from '../components/StartRound';
 import { getPageParams } from '../utils/page';
 
 export default function RoundsPage(): JSX.Element {
@@ -15,6 +16,11 @@ export default function RoundsPage(): JSX.Element {
         fetchRolls(challengeId, roundNum).then(setRolls);
     }
 
+    function onNewRound(round: RoundExt) {
+        setRounds([round, ...rounds]);
+        setRolls(round.rolls);
+    }
+
     useEffect(() => {
         fetchRounds(challengeId).then(x => {
             setRounds(x);
@@ -26,8 +32,10 @@ export default function RoundsPage(): JSX.Element {
     return (
         <DefaultLayout challengeId={challengeId}>
             <div className="row">
-                <div className="col-sm-2"></div>
-                <div className="col-sm-8">
+                <div className="col-sm-3">
+                    <StartRound challengeId={challengeId} onNewRound={onNewRound} />
+                </div>
+                <div className="col-sm-6">
                     <div className="card card-body">
                         <nav>
                             <ul className="pagination flex-wrap">
@@ -67,7 +75,7 @@ export default function RoundsPage(): JSX.Element {
                         </table>
                     </div>
                 </div>
-                <div className="col-sm-2"></div>
+                <div className="col-sm-3"></div>
             </div>
         </DefaultLayout >
     );

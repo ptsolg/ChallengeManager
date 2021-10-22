@@ -1,4 +1,4 @@
-import { Challenge, ClientChallenge, CreateChallengeParams, CreatePoolParams, CreateTitleParams, ParticipantExt, Pool, RollExt, Round, TitleExt } from '../../../common/api/models';
+import { Challenge, ClientChallenge, CreateChallengeParams, CreatePoolParams, CreateTitleParams, ParticipantExt, Pool, RollExt, Round, RoundExt, StartRoundParams, TitleExt } from '../../../common/api/models';
 import api from './api';
 
 export async function fetchChallenges(): Promise<Challenge[]> {
@@ -55,4 +55,8 @@ export async function fetchRolls(challengeId: number, roundNum: number): Promise
 
 export async function newTitle(challengeId: number, poolName: string, params: CreateTitleParams): Promise<TitleExt> {
     return api.post(`/challenge/${challengeId}/pools/${poolName}`, params, { withCredentials: true }).then(x => x.data);
+}
+
+export async function startRound(challengeId: number, params: StartRoundParams): Promise<RoundExt> {
+    return api.post(`/challenge/${challengeId}/startRound`, params, { withCredentials: true }).then(x => x.data);
 }

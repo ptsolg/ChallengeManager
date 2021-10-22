@@ -70,6 +70,11 @@ export interface TitleExt extends Title {
     proposer: User
 }
 
+export interface StartRoundParams {
+    poolName: string;
+    finishTime: Date;
+}
+
 export interface Round {
     id: number;
     num: number;
@@ -83,12 +88,16 @@ export interface Roll {
     roundId: number;
     participantId: number;
     titleId: number;
-    score: number;
+    score: number | null;
 }
 
 export interface RollExt extends Roll {
     title: Title,
     watcher: User
+}
+
+export interface RoundExt extends Round {
+    rolls: RollExt[]
 }
 
 export interface Award {
