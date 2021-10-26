@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { DatabaseTransactionConnectionType } from 'slonik';
 import * as api from '../../../common/api/models';
 import { db } from '../db/db';
-import { Challenge, Title, User } from '../db/models';
+import { Challenge, Round, Title, User } from '../db/models';
 import { verifyToken } from '../utils/auth';
 import { Error } from '../utils/error';
 import { getCid, getPoolName, getUid, LoggedInUserRequest, maybeNull, nonNull } from '../utils/request';
@@ -89,11 +89,22 @@ export async function joinChallenge(req: LoggedInUserRequest, res: JsonResponse<
     return res.json(Message.ok());
 }
 
-export async function leaveChallenge(req: LoggedInUserRequest, res: JsonResponse<Message>): Promise<Response> {
-    const c = await Challenge.fetch(db, getCid(req));
+export async function leaveChallenge(
+    transaction: DatabaseTransactionConnectionType,
+    req: LoggedInUserRequest,
+    res: JsonResponse<Message>
+): Promise<Response> {
+    const c = await Challenge.fetch(transaction, getCid(req));
     const uid = getUid(req);
     Error.throwIf(!(await c.hasParticipant(uid)), 400, 'User is not participant');
-    await c.deleteParticipant(uid);
+    if (await c.hasStarted()) {
+        const lastRound = await c.fetchLastRound() as Round;
+        const participant = await c.fetchParticipant(uid);
+        participant.failedRoundId = lastRound.id;
+        await participant.update();
+    }
+    else
+        await c.deleteParticipant(uid);
     return res.json(Message.ok());
 }
 

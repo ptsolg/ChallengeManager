@@ -228,7 +228,7 @@ export class Challenge extends Relation implements api.Challenge {
             SELECT ${Participant.COLS.join()}
             FROM participant
             WHERE challenge_id = ${this.id} AND user_id = ${userId}`)
-            .then(x => Participant.fromRow(x));
+            .then(x => Participant.fromRow(this.db, x));
     }
 
     fetchParticipantsExt(): Promise<api.ParticipantExt[]> {
@@ -247,7 +247,7 @@ export class Challenge extends Relation implements api.Challenge {
             WHERE "P".challenge_id = ${this.id}`)
             .then(result => result.rows.map(row => {
                 return {
-                    ...Participant.fromRow(row, 'p_'),
+                    ...Participant.fromRow(this.db, row, 'p_'),
                     user: User.fromRow(this.db, row, 'u_'),
                     karma: maybeNull(row, 'karma'),
                 };
@@ -259,7 +259,7 @@ export class Challenge extends Relation implements api.Challenge {
             INSERT INTO participant (challenge_id, user_id)
             VALUES (${this.id}, ${userId})
             RETURNING id`)
-            .then(id => new Participant(id, this.id, userId, null));
+            .then(id => new Participant(this.db, id, this.id, userId, null));
     }
 
     deleteParticipant(userId: number): Promise<void> {
@@ -368,7 +368,7 @@ export class Pool extends Relation implements api.Pool {
     }
 
     update(): Promise<void> {
-        return this.db.query(sql`UPDATE pool SET name = ${this.name} WHERE id= ${this.id}`)
+        return this.db.query(sql`UPDATE pool SET name = ${this.name} WHERE id = ${this.id}`)
             .then(_ => { return; });
     }
 
@@ -420,7 +420,7 @@ export class Pool extends Relation implements api.Pool {
     }
 }
 
-export class Participant implements api.Participant {
+export class Participant extends Relation implements api.Participant {
     static COLS = new Columns(['id', 'challenge_id', 'user_id', 'failed_round_id']);
     id: number;
     challengeId: number;
@@ -428,23 +428,30 @@ export class Participant implements api.Participant {
     failedRoundId: number | null;
 
     constructor(
+        db: CommonQueryMethodsType,
         id: number,
         challengeId: number,
         userId: number,
         failedRoundId: number | null,
     ) {
+        super(db);
         this.id = id;
         this.challengeId = challengeId;
         this.userId = userId;
         this.failedRoundId = failedRoundId;
     }
 
-    static fromRow(row: QueryResultRowType, p = ''): Participant {
-        return new Participant(
+    static fromRow(db: CommonQueryMethodsType, row: QueryResultRowType, p = ''): Participant {
+        return new Participant(db,
             nonNull(row, p + 'id'),
             nonNull(row, p + 'challenge_id'),
             nonNull(row, p + 'user_id'),
             maybeNull(row, p + 'failed_round_id'));
+    }
+
+    update(): Promise<void> {
+        return this.db.query(sql`UPDATE participant SET failed_round_id = ${this.failedRoundId} WHERE id = ${this.id}`)
+            .then(_ => { return; });
     }
 }
 
