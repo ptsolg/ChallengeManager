@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { DatabaseTransactionConnectionType } from 'slonik';
 import * as api from '../../../common/api/models';
 import { db } from '../db/db';
-import { Challenge, Round, Title, User } from '../db/models';
+import { Challenge, Title, User } from '../db/models';
 import { verifyToken } from '../utils/auth';
 import { Error } from '../utils/error';
 import { getCid, getPoolName, getUid, LoggedInUserRequest, maybeNull, nonNull } from '../utils/request';
@@ -13,13 +13,13 @@ export function getChallenges(req: Request, res: JsonResponse<api.Challenge[]>):
 }
 
 export function getPools(req: Request, res: JsonResponse<api.Pool[]>): Promise<Response> {
-    return Challenge.fetch(db, getCid(req))
+    return Challenge.require(db, getCid(req))
         .then(c => c.fetchPools())
         .then(x => res.json(x));
 }
 
 export function getChallenge(req: Request, res: JsonResponse<api.Challenge>): Promise<Response> {
-    return Challenge.fetch(db, getCid(req)).then(c => res.json(c));
+    return Challenge.require(db, getCid(req)).then(c => res.json(c));
 }
 
 function getChallengeParams(req: Request): api.CreateChallengeParams {
@@ -32,7 +32,7 @@ function getChallengeParams(req: Request): api.CreateChallengeParams {
 }
 
 export async function editChallenge(req: Request, res: JsonResponse<Challenge>): Promise<Response> {
-    const c = await Challenge.fetch(db, getCid(req));
+    const c = await Challenge.require(db, getCid(req));
     const params = getChallengeParams(req);
     c.name = params.name;
     c.awardUrl = params.awardUrl;
@@ -43,13 +43,13 @@ export async function editChallenge(req: Request, res: JsonResponse<Challenge>):
 }
 
 export function getParticipants(req: Request, res: JsonResponse<api.ParticipantExt[]>): Promise<Response> {
-    return Challenge.fetch(db, getCid(req))
+    return Challenge.require(db, getCid(req))
         .then(c => c.fetchParticipantsExt())
         .then(x => res.json(x));
 }
 
 export function getRounds(req: Request, res: JsonResponse<api.Round[]>): Promise<Response> {
-    return Challenge.fetch(db, getCid(req))
+    return Challenge.require(db, getCid(req))
         .then(c => c.fetchRounds())
         .then(x => res.json(x));
 }
@@ -61,19 +61,21 @@ export function newChallenge(req: LoggedInUserRequest, res: JsonResponse<api.Cha
 }
 
 async function checkCanJoinChallenge(c: Challenge, uid: number): Promise<string | undefined> {
-    if (c === null)
-        return 'Challenge does not exist';
     if (c.finishTime && Date.now() > c.finishTime?.getTime())
         return 'Challenge has ended';
-    // todo: Dedicated query?
-    if ((await c.fetchRounds()).length > 0)
+    if (await c.hasStarted())
         return 'Challenge has already started';
-    return c.hasParticipant(uid).then(x => x ? 'User already participating in this challenge' : undefined);
+    const p = await c.fetchParticipant(uid);
+    if (p === undefined)
+        return undefined;
+    return p.failedRoundId === null
+        ? 'User already participating in this challenge'
+        : 'User has failed this challenge';
 }
 
 export async function getClientChallenge(req: Request, res: JsonResponse<api.ClientChallenge>): Promise<Response> {
     const token = verifyToken(req);
-    const c = await Challenge.fetch(db, getCid(req));
+    const c = await Challenge.require(db, getCid(req));
     return res.json({
         ...c,
         canJoin: token !== undefined && (await checkCanJoinChallenge(c, token.id)) === undefined,
@@ -82,7 +84,7 @@ export async function getClientChallenge(req: Request, res: JsonResponse<api.Cli
 }
 
 export async function joinChallenge(req: LoggedInUserRequest, res: JsonResponse<Message>): Promise<Response> {
-    const c = await Challenge.fetch(db, getCid(req));
+    const c = await Challenge.require(db, getCid(req));
     const err = await checkCanJoinChallenge(c, getUid(req));
     Error.throwIf(err !== undefined, 400, err as string);
     await c.addParticipant(getUid(req));
@@ -94,12 +96,11 @@ export async function leaveChallenge(
     req: LoggedInUserRequest,
     res: JsonResponse<Message>
 ): Promise<Response> {
-    const c = await Challenge.fetch(transaction, getCid(req));
+    const c = await Challenge.require(transaction, getCid(req));
     const uid = getUid(req);
-    Error.throwIf(!(await c.hasParticipant(uid)), 400, 'User is not participant');
     if (await c.hasStarted()) {
-        const lastRound = await c.fetchLastRound() as Round;
-        const participant = await c.fetchParticipant(uid);
+        const lastRound = await c.requireLastRound();
+        const participant = await c.requireParticipant(uid);
         participant.failedRoundId = lastRound.id;
         await participant.update();
     }
@@ -109,8 +110,8 @@ export async function leaveChallenge(
 }
 
 export function getPoolTitles(req: Request, res: JsonResponse<api.TitleExt[]>): Promise<Response> {
-    return Challenge.fetch(db, getCid(req))
-        .then(c => c.fetchPool(getPoolName(req)))
+    return Challenge.require(db, getCid(req))
+        .then(c => c.requirePool(getPoolName(req)))
         .then(p => p.fetchTitles())
         .then(x => res.json(x));
 }
@@ -123,7 +124,7 @@ function getPoolParams(req: Request): api.CreatePoolParams {
 
 export async function newPool(req: Request, res: JsonResponse<api.Pool>): Promise<Response> {
     const params = getPoolParams(req);
-    const c = await Challenge.fetch(db, getCid(req));
+    const c = await Challenge.require(db, getCid(req));
     Error.throwIf(await c.hasPool(params.name), 400, `Pool "${params.name}" already exists`);
     return res.json(await c.addPool(params.name));
 }
@@ -141,21 +142,21 @@ export async function newTitle(
     res: JsonResponse<api.TitleExt>
 ): Promise<Response> {
     const params = getTitleParams(req);
-    const c = await Challenge.fetch(db, getCid(req));
-    const p = await c.fetchPool(getPoolName(req));
+    const c = await Challenge.require(db, getCid(req));
+    const p = await c.requirePool(getPoolName(req));
     Error.throwIf(await c.hasTitle(params.name), 400, `Title "${params.name}" already exists"`);
     // todo: isHidden, score, duration, etc...
-    const participant = await c.fetchParticipant(getUid(req));
+    const participant = await c.requireParticipant(getUid(req));
     const t = await p.addTitle(participant.id, params.name, params.url,
         params.isHidden, null, null, null, null);
     return res.json({
         ...t,
-        proposer: await User.fetch(db, getUid(req))
+        proposer: await User.require(db, getUid(req))
     });
 }
 
 export function getRolls(req: Request, res: JsonResponse<api.RollExt[]>): Promise<Response> {
-    return Challenge.fetch(db, getCid(req))
+    return Challenge.require(db, getCid(req))
         .then(c => c.fetchRolls(parseInt(req.params['roundNum'])))
         .then(x => res.json(x));
 }
@@ -173,10 +174,10 @@ export async function startRound(
     res: JsonResponse<api.RoundExt>
 ): Promise<Response> {
     const params = getStartRoundParams(req);
-    const c = await Challenge.fetch(transaction, getCid(req));
+    const c = await Challenge.require(transaction, getCid(req));
     const lastRound = await c.fetchLastRound();
     Error.throwIf(lastRound !== undefined && !lastRound.isFinished, 400, `Finish round ${lastRound?.num} first`);
-    const pool = await c.fetchPool(params.poolName);
+    const pool = await c.requirePool(params.poolName);
     const participants = await c.fetchParticipantsExt();
     Error.throwIf(participants.length === 0, 400, 'Not enough participants to start a round');
     const titles = await pool.fetchUnusedTitles();

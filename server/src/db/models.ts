@@ -1,6 +1,7 @@
 import { CommonQueryMethodsType, QueryResultRowType, sql } from 'slonik';
 import { DiscordUser } from '../utils/discord';
 import * as api from '../../../common/api/models';
+import { Error } from '../utils/error';
 
 function nonNull<T>(x: QueryResultRowType, key: string): T {
     if (!(key in x))
@@ -83,14 +84,13 @@ export class User extends Relation implements api.User {
             maybeNull(row, p + 'avatar_hash'));
     }
 
-    static fetch(db: CommonQueryMethodsType, id: number): Promise<User> {
-        return db.one(sql`SELECT ${this.COLS.join()} FROM "user" WHERE id = ${id}`)
-            .then(x => User.fromRow(db, x));
-    }
-
-    static fetchByDiscordId(db: CommonQueryMethodsType, discordId: string): Promise<User> {
-        return db.one(sql`SELECT ${this.COLS.join()} FROM "user" WHERE discord_id = ${discordId}`)
-            .then(x => User.fromRow(db, x));
+    static require(db: CommonQueryMethodsType, id: number): Promise<User> {
+        return db.maybeOne(sql`SELECT ${this.COLS.join()} FROM "user" WHERE id = ${id}`)
+            .then(x => {
+                if (x === null)
+                    throw new Error(400, `User with id ${id} does not exist`);
+                return User.fromRow(db, x);
+            });
     }
 
     private static create(db: CommonQueryMethodsType, u: DiscordUser): Promise<User> {
@@ -109,6 +109,11 @@ export class User extends Relation implements api.User {
                 name = ${`${u.username}#${u.discriminator}`},
                 avatar_hash = ${u.avatar}
             WHERE id = ${this.id}`).then(_ => { return; });
+    }
+
+    private static fetchByDiscordId(db: CommonQueryMethodsType, discordId: string): Promise<User> {
+        return db.one(sql`SELECT ${this.COLS.join()} FROM "user" WHERE discord_id = ${discordId}`)
+            .then(x => User.fromRow(db, x));
     }
 
     static fetchOrCreate(db: CommonQueryMethodsType, user: DiscordUser): Promise<User> {
@@ -166,9 +171,13 @@ export class Challenge extends Relation implements api.Challenge {
             nonNull(row, 'description'));
     }
 
-    static fetch(db: CommonQueryMethodsType, id: number): Promise<Challenge> {
-        return db.one(sql`SELECT ${this.COLS.join()} FROM challenge WHERE id = ${id}`)
-            .then(x => Challenge.fromRow(db, x));
+    static require(db: CommonQueryMethodsType, id: number): Promise<Challenge> {
+        return db.maybeOne(sql`SELECT ${this.COLS.join()} FROM challenge WHERE id = ${id}`)
+            .then(x => {
+                if (x === null)
+                    throw new Error(400, `Challenge with id ${id} does not exist`);
+                return Challenge.fromRow(db, x);
+            });
     }
 
     static fetchAll(db: CommonQueryMethodsType): Promise<Challenge[]> {
@@ -201,7 +210,7 @@ export class Challenge extends Relation implements api.Challenge {
             SELECT COUNT(1) FROM challenge C
             INNER JOIN round R ON R.challenge_id = C.id
             WHERE C.id = ${this.id}`)
-            .then(num_rounds => num_rounds === 0);
+            .then(num_rounds => num_rounds > 0);
     }
 
     hasTitle(name: string): Promise<boolean> {
@@ -223,12 +232,23 @@ export class Challenge extends Relation implements api.Challenge {
             WHERE id = ${this.id}`).then(_ => { return; });
     }
 
-    fetchParticipant(userId: number): Promise<Participant> {
-        return this.db.one(sql`
+    fetchParticipant(userId: number): Promise<Participant | undefined> {
+        return this.db.maybeOne(sql`
             SELECT ${Participant.COLS.join()}
             FROM participant
             WHERE challenge_id = ${this.id} AND user_id = ${userId}`)
-            .then(x => Participant.fromRow(this.db, x));
+            .then(x => x === null ? undefined : Participant.fromRow(this.db, x));
+    }
+
+    requireParticipant(userId: number): Promise<Participant> {
+        return this.fetchParticipant(userId)
+            .then(p => {
+                if (p === undefined)
+                    throw new Error(400, 'User is not participant');
+                if (p.failedRoundId !== null)
+                    throw new Error(400, 'Participant has failed this challenge');
+                return p;
+            });
     }
 
     fetchParticipantsExt(): Promise<api.ParticipantExt[]> {
@@ -279,11 +299,15 @@ export class Challenge extends Relation implements api.Challenge {
             SELECT 1 FROM pool WHERE challenge_id = ${this.id} AND name = ${name})`);
     }
 
-    fetchPool(name: string): Promise<Pool> {
-        return this.db.one(sql`
+    requirePool(name: string): Promise<Pool> {
+        return this.db.maybeOne(sql`
             SELECT ${Pool.COLS.join()} FROM pool
             WHERE challenge_id = ${this.id} AND name = ${name}`)
-            .then(x => Pool.fromRow(this.db, x));
+            .then(x => {
+                if (x === null)
+                    throw new Error(400, `Pool "${name}" does not exist`);
+                return Pool.fromRow(this.db, x);
+            });
     }
 
     fetchPools(): Promise<Pool[]> {
@@ -318,6 +342,14 @@ export class Challenge extends Relation implements api.Challenge {
             WHERE challenge_id = ${this.id}
             ORDER BY num DESC
             LIMIT 1`).then(row => row === null ? undefined : Round.fromRow(this.db, row));
+    }
+
+    requireLastRound(): Promise<Round> {
+        return this.fetchLastRound().then(lr => {
+            if (lr === undefined)
+                throw new Error(400, 'Start a new round first');
+            return lr;
+        });
     }
 
     fetchRolls(roundNum: number): Promise<api.RollExt[]> {
