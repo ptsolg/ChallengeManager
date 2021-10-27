@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getChallenges, getChallenge, getParticipants, getPools, getRounds, newChallenge, joinChallenge, getClientChallenge, leaveChallenge, editChallenge, getPoolTitles, newPool, newTitle, getRolls, startRound } from './controllers/challenge';
+import { getChallenges, getChallenge, getParticipants, getPools, getRounds, newChallenge, joinChallenge, getClientChallenge, leaveChallenge, editChallenge, getPoolTitles, newPool, newTitle, getRolls, startRound, finishRound } from './controllers/challenge';
 import { handleLogin, handleLogout } from './controllers/auth';
 import { getLoggedInUser, getUser } from './controllers/user';
 import { checkCanAddTitle, checkCanManageChallenge, checkLoggedIn } from './middleware';
@@ -27,7 +27,8 @@ const challengeRouter = Router({ mergeParams: true })
     .get('/join', checkLoggedIn, joinChallenge)
     .get('/leave', checkLoggedIn, withTransaction(leaveChallenge))
     .get('/client', getClientChallenge)
-    .post('/startRound', checkCanManageChallenge, withTransaction(startRound));
+    .post('/startRound', checkCanManageChallenge, withTransaction(startRound))
+    .get('/finishRound', checkCanManageChallenge, withTransaction(finishRound));
 
 export default Router()
     .get('/challenge', getChallenges)

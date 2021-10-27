@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Round, RollExt, RoundExt } from '../../../common/api/models';
-import { fetchRolls, fetchRounds } from '../api/challenge';
+import { fetchRolls, fetchRounds, finishRound } from '../api/challenge';
 import DefaultLayout from '../components/layout/DefaultLayout';
-import StartRound from '../components/StartRound';
+import StartFinishRound from '../components/StartFinishRound';
 import { getPageParams } from '../utils/page';
 
 export default function RoundsPage(): JSX.Element {
@@ -16,9 +16,15 @@ export default function RoundsPage(): JSX.Element {
         fetchRolls(challengeId, roundNum).then(setRolls);
     }
 
-    function onNewRound(round: RoundExt) {
-        setRounds([round, ...rounds]);
+    function onStart(round: RoundExt) {
+        setRounds([...rounds, round]);
         setRolls(round.rolls);
+    }
+
+    function onFinish() {
+        finishRound(challengeId).then(round => {
+            setRounds([...rounds.slice(0, -1), round]);
+        });
     }
 
     useEffect(() => {
@@ -33,7 +39,7 @@ export default function RoundsPage(): JSX.Element {
         <DefaultLayout challengeId={challengeId}>
             <div className="row">
                 <div className="col-sm-3">
-                    <StartRound challengeId={challengeId} onNewRound={onNewRound} />
+                    <StartFinishRound challengeId={challengeId} rounds={rounds} onStart={onStart} onFinish={onFinish} />
                 </div>
                 <div className="col-sm-6">
                     <div className="card card-body">

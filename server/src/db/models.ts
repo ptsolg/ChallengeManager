@@ -485,6 +485,13 @@ export class Participant extends Relation implements api.Participant {
         return this.db.query(sql`UPDATE participant SET failed_round_id = ${this.failedRoundId} WHERE id = ${this.id}`)
             .then(_ => { return; });
     }
+
+    static fail(db: CommonQueryMethodsType, roundId: number, participantIds: number[]): Promise<void> {
+        return db.query(sql`
+            UPDATE participant
+            SET failed_round_id = ${roundId}
+            WHERE id IN (${sql.join(participantIds, sql`, `)})`).then(_ => { return; });
+    }
 }
 
 

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { DatabaseTransactionConnectionType } from 'slonik';
 import * as api from '../../../common/api/models';
 import { db } from '../db/db';
-import { Challenge, Title, User } from '../db/models';
+import { Challenge, Participant, Round, Title, User } from '../db/models';
 import { verifyToken } from '../utils/auth';
 import { Error } from '../utils/error';
 import { getCid, getPoolName, getUid, LoggedInUserRequest, maybeNull, nonNull } from '../utils/request';
@@ -79,7 +79,8 @@ export async function getClientChallenge(req: Request, res: JsonResponse<api.Cli
     return res.json({
         ...c,
         canJoin: token !== undefined && (await checkCanJoinChallenge(c, token.id)) === undefined,
-        isParticipant: token !== undefined && await c.hasParticipant(token.id)
+        isParticipant: token !== undefined && await c.hasParticipant(token.id),
+        isCreator: token !== undefined && token.id === c.creatorId,
     });
 }
 
@@ -178,7 +179,7 @@ export async function startRound(
     const lastRound = await c.fetchLastRound();
     Error.throwIf(lastRound !== undefined && !lastRound.isFinished, 400, `Finish round ${lastRound?.num} first`);
     const pool = await c.requirePool(params.poolName);
-    const participants = await c.fetchParticipantsExt();
+    const participants = (await c.fetchParticipantsExt()).filter(p => p.failedRoundId === null);
     Error.throwIf(participants.length === 0, 400, 'Not enough participants to start a round');
     const titles = await pool.fetchUnusedTitles();
     Error.throwIf(titles.length < participants.length, 400, `Not enough titles in "${pool.name}" pool`);
@@ -201,4 +202,21 @@ export async function startRound(
         await t.update();
     }
     return res.json({ ...round, rolls: rolls });
+}
+
+export async function finishRound(
+    transaction: DatabaseTransactionConnectionType,
+    req: Request,
+    res: JsonResponse<Round>
+): Promise<Response> {
+    const c = await Challenge.require(transaction, getCid(req));
+    const lr = await c.requireLastRound();
+    Error.throwIf(lr.isFinished, 400, 'Round has already been finished');
+    const rolls = await c.fetchRolls(lr.num);
+    const failedParticipants = rolls.filter(r => r.score === null).map(r => r.participantId);
+    await Participant.fail(transaction, lr.id, failedParticipants);
+    lr.isFinished = true;
+    await lr.update();
+    // todo: karma
+    return res.json(lr);
 }

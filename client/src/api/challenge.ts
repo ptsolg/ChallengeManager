@@ -60,3 +60,7 @@ export async function newTitle(challengeId: number, poolName: string, params: Cr
 export async function startRound(challengeId: number, params: StartRoundParams): Promise<RoundExt> {
     return api.post(`/challenge/${challengeId}/startRound`, params, { withCredentials: true }).then(x => x.data);
 }
+
+export async function finishRound(challengeId: number): Promise<Round> {
+    return api.get(`/challenge/${challengeId}/finishRound`, { withCredentials: true }).then(x => x.data);
+}

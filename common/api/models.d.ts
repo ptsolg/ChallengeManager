@@ -26,6 +26,7 @@ export interface Challenge extends CreateChallengeParams {
 export interface ClientChallenge extends Challenge {
     canJoin: boolean;
     isParticipant: boolean;
+    isCreator: boolean;
 }
 
 export interface Participant {
