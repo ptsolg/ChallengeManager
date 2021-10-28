@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Row, Col, Card, Table } from 'react-bootstrap';
 import { ClientChallenge, CreateTitleParams, Pool, TitleExt } from '../../../common/api/models';
 import { fetchClientChallenge, fetchPools, newPool, newTitle } from '../api/challenge';
 import AddPool from '../components/AddPool';
@@ -39,40 +40,44 @@ export default function PoolsPage({ user }: PageProps): JSX.Element {
 
     return (
         <DefaultLayout challengeId={challengeId}>
-            <div className="row">
-                <div className="col-sm-4">
-                    <div className="card card-body mb-4">
-                        <PoolSelector challengeId={challengeId} pools={pools} setTitles={setTitles} setPoolName={setSelectedPoolName} />
-                        <AddPool user={user} challenge={challenge} onAdd={addPool} />
-                    </div>
+            <Row>
+                <Col sm="3" className="mb-2">
+                    <Card className="mb-2">
+                        <Card.Body>
+                            <PoolSelector challengeId={challengeId} pools={pools} setTitles={setTitles} setPoolName={setSelectedPoolName} />
+                            <AddPool user={user} challenge={challenge} onAdd={addPool} />
+                        </Card.Body>
+                    </Card>
                     <AddTitle pools={pools} challenge={challenge} onAdd={addTitle} />
-                </div>
-                <div className="col-sm-8">
-                    <div className="card card-body">
-                        <table className="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th scope="col">#</th>
-                                    <th scope="col">Name</th>
-                                    <th scope="col">Proposer</th>
-                                    <th scope="col">Duration</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {
-                                    titles.map((x, i) =>
-                                        <tr>
-                                            <td scope="row">{i}</td>
-                                            <td><a href={x.url ?? ''}>{x.name}</a></td>
-                                            <td>{x.proposer.name}</td>
-                                            <td>{x.duration}</td>
-                                        </tr>)
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+                </Col>
+                <Col sm="7">
+                    <Card>
+                        <Card.Body>
+                            <Table striped>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Name</th>
+                                        <th>Proposer</th>
+                                        <th>Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {
+                                        titles.map((x, i) =>
+                                            <tr>
+                                                <td scope="row">{i}</td>
+                                                <td><a href={x.url ?? ''}>{x.name}</a></td>
+                                                <td>{x.proposer.name}</td>
+                                                <td>{x.duration}</td>
+                                            </tr>)
+                                    }
+                                </tbody>
+                            </Table>
+                        </Card.Body>
+                    </Card>
+                </Col>
+            </Row>
         </DefaultLayout>
     );
 }

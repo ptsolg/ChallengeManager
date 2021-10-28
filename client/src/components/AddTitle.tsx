@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Card, Form, Row, Col, Button } from 'react-bootstrap';
 import { ClientChallenge, CreateTitleParams, Pool } from '../../../common/api/models';
 import DropdownPoolSelector from './DropdownPoolSelector';
 
@@ -32,19 +33,32 @@ export default function AddTitle({ pools, challenge, onAdd }: AddTitleProps): JS
     }, [pools]);
 
     return (
-        <div className="card card-body">
-            <label className="mb-2" htmlFor="name">Title name:</label>
-            <input className="form-control mb-2" id="name" onChange={update} required />
-            <label className="mb-2" htmlFor="url">Title URL:</label>
-            <input className="form-control mb-2" id="url" onChange={update} required />
-            <label className="mb-2">Pool:</label>
-            <DropdownPoolSelector className="mb-2" pools={pools} onSelect={(pool) => setPoolName(pool.name)} />
-            <div className="row">
-                <div className="col-8"></div>
-                <div className="col-4">
-                    <button className="btn btn-primary w-100" onClick={() => onAdd(poolName, title)}>Add</button>
-                </div>
-            </div>
-        </div>
+        <Card>
+            <Card.Body>
+                <Form onSubmit={(e) => {
+                    e.preventDefault();
+                    onAdd(poolName, title);
+                }}>
+                    <Form.Group className="mb-2">
+                        <Form.Label>Title name</Form.Label>
+                        <Form.Control id="name" onChange={update} required />
+                    </Form.Group>
+                    <Form.Group className="mb-2">
+                        <Form.Label>Title URL</Form.Label>
+                        <Form.Control id="url" onChange={update} />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                        <Form.Label>Pool</Form.Label>
+                        <DropdownPoolSelector pools={pools} onSelect={(pool) => setPoolName(pool.name)} />
+                    </Form.Group>
+                    <Row>
+                        <Col lg="7"></Col>
+                        <Col lg="5">
+                            <Button type="submit" className="w-100">Add Title</Button>
+                        </Col>
+                    </Row>
+                </Form>
+            </Card.Body>
+        </Card>
     );
 }

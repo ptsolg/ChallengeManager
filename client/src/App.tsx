@@ -12,6 +12,8 @@ import ParticipantsPage from './pages/ParticipantsPage';
 import PoolsPage from './pages/PoolsPage';
 import RoundsPage from './pages/RoundsPage';
 
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 export default function App(): JSX.Element {
     const [user, setUser] = useState<User | undefined>(undefined);
 

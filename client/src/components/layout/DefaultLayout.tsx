@@ -1,4 +1,5 @@
 import React from 'react';
+import { Container } from 'react-bootstrap';
 import ChallengeNavbar from './ChallengeNavbar';
 
 interface DefaultLayoutProps {
@@ -12,9 +13,9 @@ export default function DefaultLayout({ challengeId, children }: DefaultLayoutPr
             {challengeId === undefined
                 ? null
                 : <ChallengeNavbar challengeId={challengeId} />}
-            <div className="container mt-2">
+            <Container className="mt-2">
                 {children}
-            </div>
+            </Container>
         </div>
     );
 }

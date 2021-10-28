@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Row, Col, Card, Button, Table } from 'react-bootstrap';
+import { LinkContainer } from 'react-router-bootstrap';
 import { Challenge } from '../../../common/api/models';
 import { fetchChallenges } from '../api/challenge';
 import DefaultLayout from '../components/layout/DefaultLayout';
@@ -13,44 +14,48 @@ export default function IndexPage({ user }: PageProps): JSX.Element {
 
     return (
         <DefaultLayout>
-            <div className="row">
-                <div className="col-sm-2">
-                </div>
-                <div className="col-sm-8">
-                    <div className="card card-body">
-                        {
-                            user === undefined
-                                ? null
-                                : <Link to="/new-challenge" className="btn btn-success w-25 ms-auto me-0">
-                                    New Challenge
-                                </Link>
-                        }
-                        <table className="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Name</th>
-                                    <th scope="col">Start time</th>
-                                    <th scope="col">Finish time</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {
-                                    challenges.map(x =>
-                                        <tr key={x.id}>
-                                            <td>
-                                                <Link to={`/challenge/${x.id}`}>{x.name}</Link>
-                                            </td>
-                                            <td>{x.startTime.toLocaleString()}</td>
-                                            <td>{x.finishTime ? x.finishTime.toLocaleString() : '-'}</td>
-                                        </tr>)
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div className="col-sm-2">
-                </div>
-            </div>
+            <Row>
+                <Col></Col>
+                <Col xxl="8">
+                    <Card>
+                        <Card.Body>
+                            {
+                                user === undefined
+                                    ?
+                                    null
+                                    :
+                                    <LinkContainer to="/new-challenge">
+                                        <Button variant="success" className="float-end">New Challenge</Button>
+                                    </LinkContainer>
+                            }
+                            <Table hover>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Start time</th>
+                                        <th scope="col">Finish time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {
+                                        challenges.map(x =>
+                                            <tr key={x.id}>
+                                                <td>
+                                                    <LinkContainer to={`/challenge/${x.id}`}>
+                                                        <a>{x.name}</a>
+                                                    </LinkContainer>
+                                                </td>
+                                                <td>{x.startTime.toLocaleString()}</td>
+                                                <td>{x.finishTime ? x.finishTime.toLocaleString() : '-'}</td>
+                                            </tr>)
+                                    }
+                                </tbody>
+                            </Table>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col></Col>
+            </Row>
         </DefaultLayout>
     );
 }

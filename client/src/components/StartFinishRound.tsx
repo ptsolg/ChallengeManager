@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Card, Button, Form, Row, Col } from 'react-bootstrap';
 import { ClientChallenge, Pool, Round, RoundExt } from '../../../common/api/models';
 import { fetchClientChallenge, fetchPools, startRound } from '../api/challenge';
 import DropdownPoolSelector from './DropdownPoolSelector';
@@ -40,23 +41,37 @@ export default function StartFinishRound({ challengeId, rounds, onStart, onFinis
         return <></>;
     if (rounds.length === 0 || rounds[rounds.length - 1].isFinished)
         return (
-            <div className="card card-body">
-                <label className="mb-2">Pool: {poolName}</label>
-                <DropdownPoolSelector className="mb-2" pools={pools} onSelect={(pool) => setPoolName(pool.name)} />
-                <label className="mb-2">Length (days):</label>
-                <div className="row">
-                    <div className="col-sm-6 mb-2">
-                        <input className="form-control" onChange={update} value={numDays.toString()} required></input>
-                    </div>
-                    <div className="col-sm-6">
-                        <button className="btn btn-primary w-100" onClick={start}>Start round</button>
-                    </div>
-                </div>
-            </div>
+            <Card>
+                <Card.Body>
+                    <Form onSubmit={(e) => {
+                        e.preventDefault();
+                        start();
+                    }}>
+                        <Form.Group>
+                            <Form.Label>Pool {pools.length}</Form.Label>
+                            <DropdownPoolSelector className="mb-2" pools={pools} onSelect={(pool) => setPoolName(pool.name)} />
+                        </Form.Group>
+                        <Form.Group>
+                            <Form.Label>Length (days)</Form.Label>
+                            <Row>
+                                <Col lg="6" className="mb-2">
+                                    <Form.Control onChange={update} value={numDays.toString()} required />
+                                </Col>
+                                <Col lg="6">
+                                    <Button type="submit" className="w-100">Start round</Button>
+                                </Col>
+                            </Row>
+                        </Form.Group>
+                    </Form>
+                </Card.Body>
+            </Card>
         );
+    // todo: Prolong round
     return (
-        <div className="card card-body">
-            <button className="btn btn-primary" onClick={onFinish}>Finish round</button>
-        </div>
+        <Card>
+            <Card.Body>
+                <Button onClick={onFinish}>Finish round</Button>
+            </Card.Body>
+        </Card>
     );
 }

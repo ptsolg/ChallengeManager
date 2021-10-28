@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Row, Col, Form, Card, Button } from 'react-bootstrap';
 import showdown from 'showdown';
 import { CreateChallengeParams } from '../../../common/api/models';
 import DefaultLayout from '../components/layout/DefaultLayout';
@@ -51,64 +52,54 @@ export default function CreateOrEditChallenge(props: CreateOrEditChallengeProps)
 
     return (
         <DefaultLayout>
-            <div className="row">
-                <div className="col-sm-1">
-                </div>
-                <div className="col-sm-10">
-                    <div className="card card-body">
-                        <form onSubmit={(event) => {
-                            event.preventDefault();
-                            props.onSubmit(challenge);
-                        }}>
-                            <div className="row mb-3">
-                                <div className="col-sm-4">
-                                    <label className="mb-2" htmlFor="name">Challenge Name</label>
-                                    <input
-                                        id="name"
-                                        onChange={update}
-                                        className="form-control mb-3"
-                                        type="text"
-                                        value={challenge.name}
-                                        required />
-                                    <div className="form-check form-switch">
-                                        <label className="form-check-label" htmlFor="allowHidden">Allow hidden titles</label>
-                                        <input
-                                            id="allowHidden"
-                                            onChange={switchAllowHidden}
-                                            className="form-check-input"
-                                            type="checkbox"
-                                            checked={challenge.allowHidden} />
-                                    </div>
-                                </div>
-                                <div className="col-sm-4">
-                                    <label className="mb-2" htmlFor="awardUrl">Award URL</label>
-                                    <input id="awardUrl" className="form-control" onChange={update} type="text" />
-                                </div>
-                                <div className="col-sm-4"></div>
-                            </div>
-                            <div className="row mb-3">
-                                <label className="mb-2" htmlFor={'description'}>Description</label>
-                                <div className="col-sm-6">
-                                    <textarea
-                                        id="description"
-                                        onChange={(e) => { updateLivePreview(e.target.value); }}
-                                        className="form-control"
-                                        rows={6}
-                                        value={challenge.description} />
-                                </div>
-                                <div className="col-sm-6">
-                                    <div className="border rounded h-100 p-2" dangerouslySetInnerHTML={{ __html: preview }}></div>
-                                </div>
-                            </div>
-                            <button type="submit" className="btn btn-primary float-end">
-                                {props.challenge === undefined ? 'Create' : 'Edit'} Challenge
-                            </button>
-                        </form>
-                    </div>
-                </div>
-                <div className="col-sm-1">
-                </div>
-            </div>
+            <Row>
+                <Col></Col>
+                <Col xxl="8">
+                    <Card>
+                        <Card.Body>
+                            <Form onSubmit={(e) => {
+                                e.preventDefault();
+                                props.onSubmit(challenge);
+                            }}>
+                                <Row className="mb-3">
+                                    <Col md="6">
+                                        <Form.Group >
+                                            <Form.Label>Challenge Name</Form.Label>
+                                            <Form.Control id="name" onChange={update} value={challenge.name} required />
+                                        </Form.Group>
+                                    </Col>
+                                    <Col md="6">
+                                        <Form.Group >
+                                            <Form.Label>Award URL</Form.Label>
+                                            <Form.Control id="awardUrl" onChange={update} value={challenge.awardUrl ?? undefined} />
+                                        </Form.Group>
+                                    </Col>
+                                </Row>
+                                <Form.Group className="mb-3">
+                                    <Form.Check
+                                        type="switch"
+                                        label="Allow hidden titles"
+                                        onChange={switchAllowHidden}
+                                        checked={challenge.allowHidden} />
+                                </Form.Group>
+                                <Row className="mb-3">
+                                    <Form.Label>Description</Form.Label>
+                                    <Col md="6">
+                                        <Form.Control as="textarea" onChange={(e) => { updateLivePreview(e.target.value); }} />
+                                    </Col>
+                                    <Col md="6">
+                                        <div className="border rounded h-100 p-2" dangerouslySetInnerHTML={{ __html: preview }}></div>
+                                    </Col>
+                                </Row>
+                                <Button type="submit" className="float-end">
+                                    {props.challenge === undefined ? 'Create' : 'Edit'} Challenge
+                                </Button>
+                            </Form>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col></Col>
+            </Row>
         </DefaultLayout>
     );
 }

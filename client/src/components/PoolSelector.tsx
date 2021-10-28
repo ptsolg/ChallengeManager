@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ListGroup } from 'react-bootstrap';
 import { Pool, TitleExt } from '../../../common/api/models';
 import { fetchTitles } from '../api/challenge';
 
@@ -24,17 +25,14 @@ export default function PoolSelector({ challengeId, pools, setTitles, setPoolNam
     }, [pools]);
 
     return (
-        <div className="list-group">
-            {
-                pools.map(x =>
-                    <button
-                        id={x.id.toString()}
-                        type="button"
-                        onClick={() => selectPool(x.name)}
-                        className={`list-group-item list-group-item-action ${selectedPool == x.name ? 'active' : ''}`}>
-                        {x.name}
-                    </button>)
-            }
-        </div>
+        <ListGroup>
+            {pools.map(x =>
+                <ListGroup.Item
+                    type="button"
+                    active={selectedPool === x.name}
+                    onClick={() => selectPool(x.name)}>
+                    {x.name}
+                </ListGroup.Item>)}
+        </ListGroup>
     );
 }

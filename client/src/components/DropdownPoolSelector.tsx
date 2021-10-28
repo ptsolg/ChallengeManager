@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { InputGroup, FormControl, Dropdown } from 'react-bootstrap';
 import { Pool } from '../../../common/api/models';
 
 interface DropdownPoolSelectorProps {
@@ -24,14 +25,14 @@ export default function DropdownPoolSelector({ pools, className, onSelect }: Dro
     }, [pools]);
 
     return (
-        <div className={`input-group ${className}`}>
-            <input type="text" className="form-control" disabled value={pool.name} />
-            <div className="input-group-append">
-                <button className="btn btn-primary dropdown-toggle dropdown-toggle-split" id="dropdownButton" data-bs-toggle="dropdown"></button>
-                <ul className="dropdown-menu" aria-labelledby="dropdownButton">
-                    {pools.map(x => <li className="dropdown-item" onClick={() => select(x)}>{x.name}</li>)}
-                </ul>
-            </div>
-        </div>
+        <InputGroup className={className}>
+            <FormControl value={pool.name} disabled />
+            <Dropdown>
+                <Dropdown.Toggle />
+                <Dropdown.Menu>
+                    {pools.map(x => <Dropdown.Item onClick={() => select(x)}>{x.name}</Dropdown.Item>)}
+                </Dropdown.Menu>
+            </Dropdown>
+        </InputGroup>
     );
 }

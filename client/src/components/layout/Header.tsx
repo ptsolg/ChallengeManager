@@ -1,5 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Nav, Navbar, Dropdown, Button } from 'react-bootstrap';
+import { LinkContainer } from 'react-router-bootstrap';
 import { User } from '../../../../common/api/models';
 
 interface HeaderProps {
@@ -9,35 +10,34 @@ interface HeaderProps {
 
 export default function Header({ user, logout }: HeaderProps): JSX.Element {
     return (
-        <nav className="navbar navbar-expand-lg navbar-dark bg-dark justify-content-end">
-            <div className="collapse navbar-collapse ms-5 me-5">
-                <ul className="navbar-nav">
-                    <li className="nav-item active">
-                        <Link className="nav-link" to="/">Challenges</Link>
-                    </li>
-                    <li className="nav-item">
-                        <Link className="nav-link" to="/">Ladder</Link>
-                    </li>
-                </ul>
+        <Navbar expand="lg" variant="dark" bg="dark" className="justify-content-end">
+            <Navbar.Collapse className="ms-5 me-5">
+                <Nav>
+                    <LinkContainer to="/" exact={true}>
+                        <Nav.Link active={false}>Challenges</Nav.Link>
+                    </LinkContainer>
+                </Nav>
                 {
                     user === undefined
-                        ? <a
-                            className="btn btn-outline-info my-2 my-sm-0 ms-auto me-0"
+                        ?
+                        <Button
+                            variant="outline-info"
+                            className="my-2 my-sm-0 ms-auto me-0"
                             href="https://discord.com/api/oauth2/authorize?client_id=892509954957791282&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2F&response_type=code&scope=identify">
                             Login
-                        </a>
+                        </Button>
                         :
-                        <div className="dropdown ms-auto me-0 my-2 my-sm-0">
-                            <a className="" role="button" id="dropdownMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                        <Dropdown className="ms-auto me-0 my-2 my-sm-0">
+                            <Dropdown.Toggle as="a" bsPrefix="p-0">
                                 <img className="rounded-circle"
                                     src={`https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatarHash}?size=48`}></img>
-                            </a>
-                            <div className="dropdown-menu dropdown-menu-dark dropdown-menu-end" aria-labelledby="dropdownMenu">
-                                <button onClick={logout} className="dropdown-item" type="button">Log out</button>
-                            </div>
-                        </div>
+                            </Dropdown.Toggle>
+                            <Dropdown.Menu variant="dark" align="end">
+                                <Dropdown.Item onClick={logout}>Logout</Dropdown.Item>
+                            </Dropdown.Menu>
+                        </Dropdown>
                 }
-            </div>
-        </nav >
+            </Navbar.Collapse>
+        </Navbar>
     );
 }

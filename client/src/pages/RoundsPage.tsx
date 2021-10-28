@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Row, Col, Card, Pagination, Table } from 'react-bootstrap';
 import { Round, RollExt, RoundExt } from '../../../common/api/models';
 import { fetchRolls, fetchRounds, finishRound } from '../api/challenge';
 import DefaultLayout from '../components/layout/DefaultLayout';
@@ -37,52 +38,50 @@ export default function RoundsPage(): JSX.Element {
 
     return (
         <DefaultLayout challengeId={challengeId}>
-            <div className="row">
-                <div className="col-sm-3">
+            <Row>
+                <Col sm="3">
                     <StartFinishRound challengeId={challengeId} rounds={rounds} onStart={onStart} onFinish={onFinish} />
-                </div>
-                <div className="col-sm-6">
-                    <div className="card card-body">
-                        <nav>
-                            <ul className="pagination flex-wrap">
+                </Col>
+                <Col sm="7">
+                    <Card>
+                        <Card.Body>
+                            <Pagination>
                                 {
                                     rounds.map(x =>
-                                        <li className={`page-item ${x.num === selectedRoundNum ? 'active' : ''}`}>
-                                            <button
-                                                onClick={() => selectRound(x.num)}
-                                                className="page-link">
-                                                {x.num + 1}
-                                            </button>
-                                        </li>)
+                                        <Pagination.Item
+                                            onClick={() => selectRound(x.num)}
+                                            active={x.num === selectedRoundNum}>
+                                            {x.num + 1}
+                                        </Pagination.Item>)
                                 }
-                            </ul>
-                        </nav>
-                        <hr />
-                        <table className="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th scope="col">#</th>
-                                    <th scope="col">User</th>
-                                    <th scope="col">Title</th>
-                                    <th scope="col">Score</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {
-                                    rolls.map((x, i) =>
-                                        <tr>
-                                            <td scope="row">{i}</td>
-                                            <td>{x.watcher.name}</td>
-                                            <td>{x.title.name}</td>
-                                            <td>{x.score}</td>
-                                        </tr>)
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div className="col-sm-3"></div>
-            </div>
+                            </Pagination>
+                            <hr />
+                            <Table striped>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>User</th>
+                                        <th>Title</th>
+                                        <th>Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {
+                                        rolls.map((x, i) =>
+                                            <tr>
+                                                <td>{i}</td>
+                                                <td>{x.watcher.name}</td>
+                                                <td>{x.title.name}</td>
+                                                <td>{x.score}</td>
+                                            </tr>)
+                                    }
+                                </tbody>
+                            </Table>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col></Col>
+            </Row>
         </DefaultLayout >
     );
 }
