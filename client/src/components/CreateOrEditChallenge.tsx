@@ -85,7 +85,10 @@ export default function CreateOrEditChallenge(props: CreateOrEditChallengeProps)
                                 <Row className="mb-3">
                                     <Form.Label>Description</Form.Label>
                                     <Col md="6">
-                                        <Form.Control as="textarea" onChange={(e) => { updateLivePreview(e.target.value); }} />
+                                        <Form.Control
+                                            as="textarea"
+                                            onChange={(e) => { updateLivePreview(e.target.value); }}
+                                            value={challenge.description} />
                                     </Col>
                                     <Col md="6">
                                         <div className="border rounded h-100 p-2" dangerouslySetInnerHTML={{ __html: preview }}></div>
