@@ -1,4 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
+import 'express-async-errors';
 import cors from 'cors';
 import router from './router';
 import bodyParser from 'body-parser';
@@ -29,6 +30,7 @@ function parseDates(object: any) {
 
 async function handleError(err: unknown, req: Request, res: Response, _: NextFunction): Promise<Response> {
     if (err instanceof Error) {
+        console.log(err);
         return res.status(err.responseCode).json({ message: err.message });
     }
     return res.status(500).json({ message: 'Internal server error' });

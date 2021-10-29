@@ -23,6 +23,8 @@ function parseDates(object: any) {
 api.interceptors.response.use(response => {
     parseDates(response.data);
     return response;
+}, err => {
+    return Promise.reject(err.response.data);
 });
 
 export default api;

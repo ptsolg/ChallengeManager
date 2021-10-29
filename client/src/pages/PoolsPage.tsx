@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, Table } from 'react-bootstrap';
-import { ClientChallenge, CreateTitleParams, Pool, TitleExt } from '../../../common/api/models';
+import { ClientChallenge, CreateTitleParams, Message, Pool, TitleExt } from '../../../common/api/models';
 import { fetchClientChallenge, fetchPools, newPool, newTitle } from '../api/challenge';
 import AddPool from '../components/AddPool';
 import AddTitle from '../components/AddTitle';
@@ -15,22 +15,19 @@ export default function PoolsPage({ user }: PageProps): JSX.Element {
     const [challenge, setChallenge] = useState<ClientChallenge>();
     const [pools, setPools] = useState<Pool[]>([]);
     const [selectedPoolName, setSelectedPoolName] = useState('');
+    const [errs, setErrs] = useState<string[]>([]);
 
     async function addPool(pool: Pool) {
         newPool(challengeId, pool)
             .then(pool => setPools([...pools, pool]))
-            .catch(_ => {
-                // todo
-            });
+            .catch((err: Message) => setErrs([...errs, err.message]));
     }
 
     async function addTitle(poolName: string, title: CreateTitleParams) {
         newTitle(challengeId, poolName, title).then(t => {
             if (poolName == selectedPoolName)
                 setTitles([...titles, t]);
-        }).catch(_ => {
-            // todo
-        });
+        }).catch((err: Message) => setErrs([...errs, err.message]));
     }
 
     useEffect(() => {
@@ -39,7 +36,7 @@ export default function PoolsPage({ user }: PageProps): JSX.Element {
     }, []);
 
     return (
-        <DefaultLayout challengeId={challengeId}>
+        <DefaultLayout challengeId={challengeId} errors={errs}>
             <Row>
                 <Col sm="3" className="mb-2">
                     <Card className="mb-2">
