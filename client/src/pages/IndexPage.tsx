@@ -4,10 +4,10 @@ import { LinkContainer } from 'react-router-bootstrap';
 import { Challenge } from '../../../common/api/models';
 import { fetchChallenges } from '../api';
 import DefaultLayout from '../components/layout/DefaultLayout';
-import { useSelector } from '../hooks';
+import { useUser } from '../hooks';
 
 export default function IndexPage(): JSX.Element {
-    const user = useSelector((state) => state.user);
+    const user = useUser();
     const [challenges, setChallenges] = useState<Challenge[]>([]);
     useEffect(() => {
         fetchChallenges().then(setChallenges);

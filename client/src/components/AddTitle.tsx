@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Form, Row, Col, Button } from 'react-bootstrap';
 import { CreateTitleParams } from '../../../common/api/models';
-import { useSelector } from '../hooks';
+import { useChallenge } from '../hooks';
 import DropdownPoolSelector from './DropdownPoolSelector';
 
 interface AddTitleProps {
@@ -9,8 +9,8 @@ interface AddTitleProps {
 }
 
 export default function AddTitle({ onAdd }: AddTitleProps): JSX.Element {
-    const challenge = useSelector(state => state.challenge);
-    const pools = useSelector(state => state.pools);
+    const challenge = useChallenge();
+    const pools = challenge?.pools ?? [];
     const [title, setTitle] = useState<CreateTitleParams>({
         name: '',
         url: '',

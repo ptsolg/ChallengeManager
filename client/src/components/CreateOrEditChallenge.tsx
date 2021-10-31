@@ -5,11 +5,11 @@ import showdown from 'showdown';
 import { CreateChallengeParams } from '../../../common/api/models';
 import { editChallenge, newChallenge } from '../api';
 import DefaultLayout from '../components/layout/DefaultLayout';
-import { useSelector } from '../hooks';
+import { useChallenge } from '../hooks';
 
 export default function CreateOrEditChallenge(): JSX.Element {
     const history = useHistory();
-    const oldChallenge = useSelector(state => state.challenge);
+    const oldChallenge = useChallenge();
     const [challenge, setChallenge] = useState<CreateChallengeParams>({
         name: '',
         allowHidden: true,

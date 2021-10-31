@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, Table } from 'react-bootstrap';
-import { CreateTitleParams, Message, TitleExt } from '../../../common/api/models';
-import { newTitle } from '../api';
+import { CreateTitleParams, Message, Pool, TitleExt } from '../../../common/api/models';
+import { fetchTitles, newTitle } from '../api';
 import AddPool from '../components/AddPool';
 import AddTitle from '../components/AddTitle';
 import DefaultLayout from '../components/layout/DefaultLayout';
@@ -13,13 +13,18 @@ export default function PoolsPage(): JSX.Element {
     const cid = useChallengeId();
     const dispatch = useDispatch();
     const [titles, setTitles] = useState<TitleExt[]>([]);
-    const [selectedPoolName, setSelectedPoolName] = useState('');
+    const [pool, setPool] = useState<Pool>();
 
     function addTitle(poolName: string, title: CreateTitleParams) {
         newTitle(cid, poolName, title).then(t => {
-            if (poolName == selectedPoolName)
+            if (poolName === pool?.name)
                 setTitles([...titles, t]);
         }).catch((err: Message) => dispatch(emitError(err.message)));
+    }
+
+    function selectPool(pool: Pool) {
+        setPool(pool);
+        fetchTitles(cid, pool.name).then(setTitles);
     }
 
     useEffect(() => {
@@ -33,7 +38,7 @@ export default function PoolsPage(): JSX.Element {
                 <Col sm="3" className="mb-2">
                     <Card className="mb-2">
                         <Card.Body>
-                            <PoolSelector setTitles={setTitles} setPoolName={setSelectedPoolName} />
+                            <PoolSelector onSelect={selectPool} />
                             <AddPool />
                         </Card.Body>
                     </Card>

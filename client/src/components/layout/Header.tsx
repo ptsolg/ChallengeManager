@@ -1,11 +1,11 @@
 import React from 'react';
 import { Nav, Navbar, Dropdown, Button } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
-import { useDispatch, useSelector } from '../../hooks';
+import { useDispatch, useUser } from '../../hooks';
 import { logout } from '../../stateSlice';
 
 export default function Header(): JSX.Element {
-    const user = useSelector(state => state.user);
+    const user = useUser();
     const dispatch = useDispatch();
 
     return (

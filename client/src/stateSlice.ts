@@ -2,13 +2,17 @@ import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { ClientChallenge, CreatePoolParams, Message, ParticipantExt, Pool, Round, StartRoundParams, User } from '../../common/api/models';
 import * as api from './api';
 
-interface State {
-    user?: User;
-    challenge?: ClientChallenge;
+export interface ChallengeState extends ClientChallenge {
     pools: Pool[];
     rounds: Round[];
     participants: ParticipantExt[];
     errors: { message: string, show: boolean }[];
+}
+
+export interface State {
+    user?: User;
+    cid: number;
+    challenge: { [key: number]: ChallengeState }
 }
 
 export const fetchCurrentUser = createAsyncThunk(
@@ -66,25 +70,56 @@ export const fetchRounds = createAsyncThunk(
     (cid: number) => api.fetchRounds(cid)
 );
 
-const stateSlice = createSlice({
-    name: 'state',
-    initialState: {
-        user: undefined,
-        challenge: undefined,
+export const fetchParticipants = createAsyncThunk(
+    'state/fetchParticipants',
+    (cid: number) => api.fetchParticipants(cid)
+);
+
+function initialChallengeState(cid: number): ChallengeState {
+    return {
+        id: cid,
+        name: '',
+        awardUrl: null,
+        allowHidden: false,
+        description: '',
+        startTime: '',
+        finishTime: null,
+        creatorId: -1,
+        canJoin: false,
+        isParticipant: false,
+        isCreator: false,
         pools: [],
         rounds: [],
         participants: [],
         errors: [],
+    };
+}
+
+function getChallenge(state: State): ChallengeState {
+    if (!(state.cid in state.challenge))
+        state.challenge[state.cid] = initialChallengeState(state.cid);
+    return state.challenge[state.cid];
+}
+
+const stateSlice = createSlice({
+    name: 'state',
+    initialState: {
+        user: undefined,
+        cid: -1,
+        challenge: {},
     } as State,
     reducers: {
         emitError(state, action: PayloadAction<string>) {
-            state.errors.push({
+            getChallenge(state).errors.push({
                 message: action.payload,
                 show: true
             });
         },
         hideError(state, action: PayloadAction<number>) {
-            state.errors[action.payload].show = false;
+            getChallenge(state).errors[action.payload].show = false;
+        },
+        setChallengeId(state, action: PayloadAction<number>) {
+            state.cid = action.payload;
         }
     },
     extraReducers: {
@@ -98,40 +133,51 @@ const stateSlice = createSlice({
             state.user = undefined;
         },
         [fetchChallenge.fulfilled.type]: (state, action: PayloadAction<ClientChallenge | undefined>) => {
-            state.challenge = action.payload;
+            const c = getChallenge(state);
+            state.challenge[state.cid] = {
+                ...c,
+                ...action.payload,
+            };
         },
         [join.fulfilled.type]: (state, _) => {
-            if (state.challenge !== undefined) {
-                state.challenge.canJoin = false;
-                state.challenge.isParticipant = true;
-            }
+            const c = getChallenge(state);
+            c.canJoin = false;
+            c.isParticipant = true;
         },
         [leave.fulfilled.type]: (state, action: PayloadAction<ClientChallenge | undefined>) => {
-            state.challenge = action.payload;
+            const c = getChallenge(state);
+            state.challenge[state.cid] = {
+                ...c,
+                ...action.payload,
+            };
         },
         [addPool.fulfilled.type]: (state, action: PayloadAction<Pool>) => {
-            state.pools.push(action.payload);
+            getChallenge(state).pools.push(action.payload);
         },
         [addPool.rejected.type]: (state, action) => {
-            state.errors.push({
+            getChallenge(state).errors.push({
                 message: (action.error as Message).message,
                 show: true
             });
         },
         [startRound.fulfilled.type]: (state, action: PayloadAction<Round>) => {
-            state.rounds.push(action.payload);
+            getChallenge(state).rounds.push(action.payload);
         },
         [finishRound.fulfilled.type]: (state, action: PayloadAction<Round>) => {
-            state.rounds[state.rounds.length - 1] = action.payload;
+            const c = getChallenge(state);
+            c.rounds[c.rounds.length - 1] = action.payload;
         },
         [fetchPools.fulfilled.type]: (state, action: PayloadAction<Pool[]>) => {
-            state.pools = action.payload;
+            getChallenge(state).pools = action.payload;
         },
         [fetchRounds.fulfilled.type]: (state, action: PayloadAction<Round[]>) => {
-            state.rounds = action.payload;
+            getChallenge(state).rounds = action.payload;
         },
+        [fetchParticipants.fulfilled.type]: (state, action: PayloadAction<ParticipantExt[]>) => {
+            getChallenge(state).participants = action.payload;
+        }
     }
 });
 
-export const { emitError, hideError } = stateSlice.actions;
+export const { emitError, hideError, setChallengeId } = stateSlice.actions;
 export default stateSlice.reducer;

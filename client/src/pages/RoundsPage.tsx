@@ -4,12 +4,12 @@ import { RollExt } from '../../../common/api/models';
 import { fetchRolls } from '../api';
 import DefaultLayout from '../components/layout/DefaultLayout';
 import StartFinishRound from '../components/StartFinishRound';
-import { useChallengeId, useDispatch, useSelector } from '../hooks';
+import { useChallengeId, useDispatch, useRounds } from '../hooks';
 import { fetchRounds } from '../stateSlice';
 
 export default function RoundsPage(): JSX.Element {
     const cid = useChallengeId();
-    const rounds = useSelector(state => state.rounds);
+    const rounds = useRounds();
     const dispatch = useDispatch();
     const [rolls, setRolls] = useState<RollExt[]>([]);
     const [selectedRoundNum, setSelectedRoundNum] = useState(-1);

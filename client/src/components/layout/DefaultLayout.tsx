@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Container, Toast, ToastContainer } from 'react-bootstrap';
 import { useDispatch } from 'react-redux';
-import { useChallengeId, useSelector } from '../../hooks';
-import { hideError } from '../../stateSlice';
+import { useChallengeId, useErrors } from '../../hooks';
+import { hideError, setChallengeId } from '../../stateSlice';
 import ChallengeNavbar from './ChallengeNavbar';
 
 interface DefaultLayoutProps {
@@ -10,8 +10,8 @@ interface DefaultLayoutProps {
 }
 
 export default function DefaultLayout({ children }: DefaultLayoutProps): JSX.Element {
-    const challengeId = useChallengeId();
-    const errors = useSelector(state => state.errors);
+    const cid = useChallengeId();
+    const errors = useErrors();
     const dispatch = useDispatch();
     let toast = null;
 
@@ -31,10 +31,14 @@ export default function DefaultLayout({ children }: DefaultLayoutProps): JSX.Ele
         );
     }
 
+    useEffect(() => {
+        dispatch(setChallengeId(cid));
+    }, []);
+
     return (
         <div>
             {
-                isNaN(challengeId)
+                isNaN(cid)
                     ? null
                     : <ChallengeNavbar />
             }

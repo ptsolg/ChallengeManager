@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { Card, Button, Form, Row, Col } from 'react-bootstrap';
-import { useDispatch, useSelector } from '../hooks';
+import { useChallenge, useDispatch } from '../hooks';
 import { finishRound, startRound } from '../stateSlice';
 import DropdownPoolSelector from './DropdownPoolSelector';
 
 export default function StartFinishRound(): JSX.Element {
-    const challenge = useSelector(state => state.challenge);
-    const pools = useSelector(state => state.pools);
-    const rounds = useSelector(state => state.rounds);
+    const challenge = useChallenge();
     const dispatch = useDispatch();
     const [poolName, setPoolName] = useState('');
     const [numDays, setNumDays] = useState('7');
@@ -38,7 +36,7 @@ export default function StartFinishRound(): JSX.Element {
 
     if (challenge === undefined || !challenge.isCreator)
         return <></>;
-    if (rounds.length === 0 || rounds[rounds.length - 1].isFinished)
+    if (challenge.rounds.length === 0 || challenge.rounds[challenge.rounds.length - 1].isFinished)
         return (
             <Card>
                 <Card.Body>
@@ -47,7 +45,7 @@ export default function StartFinishRound(): JSX.Element {
                         start();
                     }}>
                         <Form.Group>
-                            <Form.Label>Pool {pools.length}</Form.Label>
+                            <Form.Label>Pool</Form.Label>
                             <DropdownPoolSelector className="mb-2" onSelect={(pool) => setPoolName(pool.name)} />
                         </Form.Group>
                         <Form.Group>

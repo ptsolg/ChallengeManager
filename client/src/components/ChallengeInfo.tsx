@@ -1,13 +1,13 @@
 import React from 'react';
 import { Card, Row, Col, Button } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
-import { useSelector, useDispatch, useChallengeId } from '../hooks';
+import { useDispatch, useChallenge, useUser, useChallengeId } from '../hooks';
 import { leave, join } from '../stateSlice';
 
 export default function ChallengeInfo(): JSX.Element {
     const cid = useChallengeId();
-    const challenge = useSelector(state => state.challenge);
-    const user = useSelector(state => state.user);
+    const challenge = useChallenge();
+    const user = useUser();
     const dispatch = useDispatch();
 
     if (challenge === undefined)

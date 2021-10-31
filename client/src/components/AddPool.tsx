@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Form, Row, Col, Button } from 'react-bootstrap';
 import { CreatePoolParams } from '../../../common/api/models';
-import { useDispatch, useSelector } from '../hooks';
+import { useChallenge, useDispatch, useUser } from '../hooks';
 import { addPool } from '../stateSlice';
 
 export default function AddPool(): JSX.Element {
-    const user = useSelector(state => state.user);
-    const challenge = useSelector(state => state.challenge);
+    const user = useUser();
+    const challenge = useChallenge();
     const dispatch = useDispatch();
     const [pool, setPool] = useState<CreatePoolParams>({ name: '' });
 

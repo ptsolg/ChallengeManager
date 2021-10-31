@@ -1,28 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { ListGroup } from 'react-bootstrap';
-import { TitleExt } from '../../../common/api/models';
-import { fetchTitles } from '../api';
-import { useChallengeId, useSelector } from '../hooks';
+import { Pool } from '../../../common/api/models';
+import { usePools } from '../hooks';
 
 interface PoolSelectorProps {
-    setTitles(titles: TitleExt[]): void,
-    setPoolName(poolName: string): void,
+    onSelect(pool: Pool): void;
 }
 
-export default function PoolSelector({ setTitles, setPoolName }: PoolSelectorProps): JSX.Element {
-    const cid = useChallengeId();
-    const pools = useSelector(state => state.pools);
-    const [selectedPool, setSelectedPool] = useState('');
+export default function PoolSelector({ onSelect }: PoolSelectorProps): JSX.Element {
+    const pools = usePools();
+    const [pool, setPool] = useState<Pool>();
 
-    function selectPool(poolName: string) {
-        setSelectedPool(poolName);
-        setPoolName(poolName);
-        fetchTitles(cid, poolName).then(setTitles);
+    function selectPool(p: Pool) {
+        setPool(p);
+        onSelect(p);
     }
 
     useEffect(() => {
-        if (pools.length > 0 && selectedPool == '')
-            selectPool(pools[0].name);
+        if (pools.length > 0) {
+            console.log('change', pool, pools);
+            selectPool(pools[0]);
+        }
     }, [pools]);
 
     return (
@@ -30,8 +28,8 @@ export default function PoolSelector({ setTitles, setPoolName }: PoolSelectorPro
             {pools.map(x =>
                 <ListGroup.Item
                     type="button"
-                    active={selectedPool === x.name}
-                    onClick={() => selectPool(x.name)}>
+                    active={pool?.id === x.id}
+                    onClick={() => selectPool(x)}>
                     {x.name}
                 </ListGroup.Item>)}
         </ListGroup>
