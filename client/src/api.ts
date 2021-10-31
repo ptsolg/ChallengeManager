@@ -1,5 +1,16 @@
-import { Challenge, ClientChallenge, CreateChallengeParams, CreatePoolParams, CreateTitleParams, ParticipantExt, Pool, RollExt, Round, RoundExt, StartRoundParams, TitleExt } from '../../../common/api/models';
-import api from './api';
+import axios from 'axios';
+import { Challenge, ClientChallenge, CreateChallengeParams, CreatePoolParams, CreateTitleParams, ParticipantExt, Pool, RollExt, Round, RoundExt, StartRoundParams, TitleExt } from '../../common/api/models';
+import { User } from '../../common/api/models';
+
+const api = axios.create({
+    baseURL: `${process.env['REACT_APP_API_URL']}api/`,
+});
+
+api.interceptors.response.use(response => {
+    return response;
+}, err => {
+    return Promise.reject(err.response.data);
+});
 
 export async function fetchChallenges(): Promise<Challenge[]> {
     return api.get('/challenge').then(x => x.data);
@@ -63,4 +74,19 @@ export async function startRound(challengeId: number, params: StartRoundParams):
 
 export async function finishRound(challengeId: number): Promise<Round> {
     return api.get(`/challenge/${challengeId}/finishRound`, { withCredentials: true }).then(x => x.data);
+}
+
+export async function login(authorizationCode: string): Promise<User> {
+    return api.post('/auth/login', { code: authorizationCode }, { withCredentials: true }).then(x => x.data);
+}
+
+export async function logout(): Promise<void> {
+    return api.post('/auth/logout', {}, { withCredentials: true })
+        .then(_ => { return; })
+        .catch(_ => { return; });
+}
+
+export async function fetchCurrentUser(): Promise<User | undefined> {
+    return api.get('/user/me', { withCredentials: true })
+        .then(x => x.data).catch(_ => undefined);
 }

@@ -1,22 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { ListGroup } from 'react-bootstrap';
-import { Pool, TitleExt } from '../../../common/api/models';
-import { fetchTitles } from '../api/challenge';
+import { TitleExt } from '../../../common/api/models';
+import { fetchTitles } from '../api';
+import { useChallengeId, useSelector } from '../hooks';
 
 interface PoolSelectorProps {
-    challengeId: number,
-    pools: Pool[],
     setTitles(titles: TitleExt[]): void,
     setPoolName(poolName: string): void,
 }
 
-export default function PoolSelector({ challengeId, pools, setTitles, setPoolName }: PoolSelectorProps): JSX.Element {
+export default function PoolSelector({ setTitles, setPoolName }: PoolSelectorProps): JSX.Element {
+    const cid = useChallengeId();
+    const pools = useSelector(state => state.pools);
     const [selectedPool, setSelectedPool] = useState('');
 
     function selectPool(poolName: string) {
         setSelectedPool(poolName);
         setPoolName(poolName);
-        fetchTitles(challengeId, poolName).then(setTitles);
+        fetchTitles(cid, poolName).then(setTitles);
     }
 
     useEffect(() => {

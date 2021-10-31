@@ -1,39 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Row, Col, Card } from 'react-bootstrap';
 import showdown from 'showdown';
-import { ClientChallenge } from '../../../common/api/models';
-import { fetchClientChallenge, joinChallenge, leaveChallenge } from '../api/challenge';
 import ChallengeInfo from '../components/ChallengeInfo';
 import DefaultLayout from '../components/layout/DefaultLayout';
-import { getPageParams, PageProps } from '../utils/page';
+import { useChallengeId, useDispatch, useSelector } from '../hooks';
+import { fetchChallenge } from '../stateSlice';
 
-export default function OverviewPage({ user }: PageProps): JSX.Element {
-    const challengeId = getPageParams().challengeId;
+export default function OverviewPage(): JSX.Element {
+    const cid = useChallengeId();
     const converter = new showdown.Converter();
-    const [challenge, setChallenge] = useState<ClientChallenge>();
+    const challenge = useSelector(state => state.challenge);
+    const dispatch = useDispatch();
 
-    async function update() {
-        fetchClientChallenge(challengeId).then(setChallenge);
-    }
-
-    async function join() {
-        if (challenge !== undefined)
-            joinChallenge(challenge.id).then(_ => setChallenge({
-                ...challenge,
-                canJoin: false,
-                isParticipant: true
-            }));
-    }
-
-    async function leave() {
-        if (challenge !== undefined)
-            leaveChallenge(challenge.id).then(_ => update());
-    }
-
-    useEffect(() => { update(); }, []);
+    useEffect(() => {
+        dispatch(fetchChallenge(cid));
+    }, []);
 
     return (
-        <DefaultLayout challengeId={challengeId}>
+        <DefaultLayout>
             <Row>
                 <Col md="8">
                     <Card>
@@ -43,7 +27,7 @@ export default function OverviewPage({ user }: PageProps): JSX.Element {
                     </Card>
                 </Col>
                 <Col md="4">
-                    <ChallengeInfo challenge={challenge} user={user} onJoin={join} onLeave={leave} />
+                    <ChallengeInfo />
                 </Col>
             </Row>
         </DefaultLayout>

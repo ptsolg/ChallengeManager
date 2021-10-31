@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, Table } from 'react-bootstrap';
 import { ParticipantExt } from '../../../common/api/models';
-import { fetchParticipants } from '../api/challenge';
+import { fetchParticipants } from '../api';
 import DefaultLayout from '../components/layout/DefaultLayout';
-import { getPageParams } from '../utils/page';
+import { useChallengeId } from '../hooks';
 
 export default function ParticipantsPage(): JSX.Element {
-    const challengeId = getPageParams().challengeId;
+    const challengeId = useChallengeId();
     const [participants, setParticipants] = useState<ParticipantExt[]>([]);
     useEffect(() => {
         fetchParticipants(challengeId).then(setParticipants);
     }, []);
 
     return (
-        <DefaultLayout challengeId={challengeId} >
+        <DefaultLayout >
             <Row>
                 <Col md="2"></Col>
                 <Col md="8">

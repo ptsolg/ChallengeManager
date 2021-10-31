@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { InputGroup, FormControl, Dropdown } from 'react-bootstrap';
 import { Pool } from '../../../common/api/models';
+import { useSelector } from '../hooks';
 
 interface DropdownPoolSelectorProps {
-    pools: Pool[];
     className?: string;
     onSelect(pool: Pool): void;
 }
 
-export default function DropdownPoolSelector({ pools, className, onSelect }: DropdownPoolSelectorProps): JSX.Element {
+export default function DropdownPoolSelector({ className, onSelect }: DropdownPoolSelectorProps): JSX.Element {
+    const pools = useSelector(state => state.pools);
     const [pool, setPool] = useState({
         id: -1,
         name: ''

@@ -1,14 +1,13 @@
 import React from 'react';
 import { Nav, Navbar, Dropdown, Button } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
-import { User } from '../../../../common/api/models';
+import { useDispatch, useSelector } from '../../hooks';
+import { logout } from '../../stateSlice';
 
-interface HeaderProps {
-    user: User | undefined,
-    logout(): void
-}
+export default function Header(): JSX.Element {
+    const user = useSelector(state => state.user);
+    const dispatch = useDispatch();
 
-export default function Header({ user, logout }: HeaderProps): JSX.Element {
     return (
         <Navbar expand="lg" variant="dark" bg="dark" className="justify-content-end">
             <Navbar.Collapse className="ms-5 me-5">
@@ -33,7 +32,7 @@ export default function Header({ user, logout }: HeaderProps): JSX.Element {
                                     src={`https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatarHash}?size=48`}></img>
                             </Dropdown.Toggle>
                             <Dropdown.Menu variant="dark" align="end">
-                                <Dropdown.Item onClick={logout}>Logout</Dropdown.Item>
+                                <Dropdown.Item onClick={() => dispatch(logout())}>Logout</Dropdown.Item>
                             </Dropdown.Menu>
                         </Dropdown>
                 }

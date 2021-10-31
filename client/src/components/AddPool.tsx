@@ -1,27 +1,25 @@
 import React, { useState } from 'react';
 import { Form, Row, Col, Button } from 'react-bootstrap';
-import { Challenge, CreatePoolParams, User } from '../../../common/api/models';
+import { CreatePoolParams } from '../../../common/api/models';
+import { useDispatch, useSelector } from '../hooks';
+import { addPool } from '../stateSlice';
 
-interface AddPoolProps {
-    user?: User,
-    challenge?: Challenge,
-    onAdd(pool: CreatePoolParams): void
-}
-
-export default function AddPool({ user, challenge, onAdd }: AddPoolProps): JSX.Element {
-    if (!user || !challenge || user.id != challenge.creatorId)
-        return (<></>);
-
+export default function AddPool(): JSX.Element {
+    const user = useSelector(state => state.user);
+    const challenge = useSelector(state => state.challenge);
+    const dispatch = useDispatch();
     const [pool, setPool] = useState<CreatePoolParams>({ name: '' });
 
     async function update(e: React.ChangeEvent<HTMLInputElement>) {
         setPool({ ...pool, name: e.target.value });
     }
 
+    if (!user || !challenge || user.id != challenge.creatorId)
+        return (<></>);
     return (
         <Form className="mt-2" onSubmit={(e) => {
             e.preventDefault();
-            onAdd(pool);
+            dispatch(addPool({ challengeId: challenge.id, params: pool }));
         }}>
             <Row>
                 <Col lg="7" className="mt-1">

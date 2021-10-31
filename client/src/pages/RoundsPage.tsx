@@ -1,46 +1,38 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, Pagination, Table } from 'react-bootstrap';
-import { Round, RollExt, RoundExt } from '../../../common/api/models';
-import { fetchRolls, fetchRounds, finishRound } from '../api/challenge';
+import { RollExt } from '../../../common/api/models';
+import { fetchRolls } from '../api';
 import DefaultLayout from '../components/layout/DefaultLayout';
 import StartFinishRound from '../components/StartFinishRound';
-import { getPageParams } from '../utils/page';
+import { useChallengeId, useDispatch, useSelector } from '../hooks';
+import { fetchRounds } from '../stateSlice';
 
 export default function RoundsPage(): JSX.Element {
-    const challengeId = getPageParams().challengeId;
-    const [rounds, setRounds] = useState<Round[]>([]);
+    const cid = useChallengeId();
+    const rounds = useSelector(state => state.rounds);
+    const dispatch = useDispatch();
     const [rolls, setRolls] = useState<RollExt[]>([]);
     const [selectedRoundNum, setSelectedRoundNum] = useState(-1);
 
     function selectRound(roundNum: number) {
         setSelectedRoundNum(roundNum);
-        fetchRolls(challengeId, roundNum).then(setRolls);
-    }
-
-    function onStart(round: RoundExt) {
-        setRounds([...rounds, round]);
-        setRolls(round.rolls);
-    }
-
-    function onFinish() {
-        finishRound(challengeId).then(round => {
-            setRounds([...rounds.slice(0, -1), round]);
-        });
+        fetchRolls(cid, roundNum).then(setRolls);
     }
 
     useEffect(() => {
-        fetchRounds(challengeId).then(x => {
-            setRounds(x);
-            if (x.length > 0)
-                selectRound(x[0].num);
-        });
+        dispatch(fetchRounds(cid));
     }, []);
 
+    useEffect(() => {
+        if (rounds.length > 0 && selectedRoundNum == -1)
+            selectRound(rounds[0].num);
+    }, [rounds]);
+
     return (
-        <DefaultLayout challengeId={challengeId}>
+        <DefaultLayout>
             <Row>
                 <Col sm="3">
-                    <StartFinishRound challengeId={challengeId} rounds={rounds} onStart={onStart} onFinish={onFinish} />
+                    <StartFinishRound />
                 </Col>
                 <Col sm="7">
                     <Card>

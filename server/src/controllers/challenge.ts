@@ -61,7 +61,7 @@ export function newChallenge(req: LoggedInUserRequest, res: JsonResponse<api.Cha
 }
 
 async function checkCanJoinChallenge(c: Challenge, uid: number): Promise<string | undefined> {
-    if (c.finishTime && Date.now() > c.finishTime?.getTime())
+    if (c.finishTime && Date.now() > Date.parse(c.finishTime))
         return 'Challenge has ended';
     if (await c.hasStarted())
         return 'Challenge has already started';
@@ -183,7 +183,7 @@ export async function startRound(
     Error.throwIf(participants.length === 0, 400, 'Not enough participants to start a round');
     const titles = await pool.fetchUnusedTitles();
     Error.throwIf(titles.length < participants.length, 400, `Not enough titles in "${pool.name}" pool`);
-    const round = await c.addRound(params.finishTime);
+    const round = await c.addRound(new Date(params.finishTime));
 
     const popRandomTitle = (): Title => {
         const n = Math.floor(Math.random() * titles.length);

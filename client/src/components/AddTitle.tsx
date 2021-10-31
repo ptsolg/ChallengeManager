@@ -1,18 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Form, Row, Col, Button } from 'react-bootstrap';
-import { ClientChallenge, CreateTitleParams, Pool } from '../../../common/api/models';
+import { CreateTitleParams } from '../../../common/api/models';
+import { useSelector } from '../hooks';
 import DropdownPoolSelector from './DropdownPoolSelector';
 
 interface AddTitleProps {
-    pools: Pool[],
-    challenge?: ClientChallenge,
     onAdd(poolName: string, title: CreateTitleParams): void
 }
 
-export default function AddTitle({ pools, challenge, onAdd }: AddTitleProps): JSX.Element {
-    if (!challenge || !challenge.isParticipant)
-        return (<></>);
-
+export default function AddTitle({ onAdd }: AddTitleProps): JSX.Element {
+    const challenge = useSelector(state => state.challenge);
+    const pools = useSelector(state => state.pools);
     const [title, setTitle] = useState<CreateTitleParams>({
         name: '',
         url: '',
@@ -32,6 +30,8 @@ export default function AddTitle({ pools, challenge, onAdd }: AddTitleProps): JS
             setPoolName(pools[0].name);
     }, [pools]);
 
+    if (!challenge || !challenge.isParticipant)
+        return (<></>);
     return (
         <Card>
             <Card.Body>
@@ -49,7 +49,7 @@ export default function AddTitle({ pools, challenge, onAdd }: AddTitleProps): JS
                     </Form.Group>
                     <Form.Group className="mb-3">
                         <Form.Label>Pool</Form.Label>
-                        <DropdownPoolSelector pools={pools} onSelect={(pool) => setPoolName(pool.name)} />
+                        <DropdownPoolSelector onSelect={(pool) => setPoolName(pool.name)} />
                     </Form.Group>
                     <Row>
                         <Col lg="7"></Col>

@@ -6,7 +6,7 @@ import { JsonResponse, Message } from '../utils/response';
 import { Error } from '../utils/error';
 import { db } from '../db/db';
 
-export async function handleLogin(req: Request, res: JsonResponse<Message>): Promise<Response> {
+export async function handleLogin(req: Request, res: JsonResponse<User>): Promise<Response> {
     Error.throwIf(!('code' in req.body), 400, 'Missing "code" property');
     return getDiscordToken(req.body['code'])
         .then(getDiscordUser)
@@ -18,7 +18,7 @@ export async function handleLogin(req: Request, res: JsonResponse<Message>): Pro
                     expires: new Date(Date.now() + 2629800000), // 1 Month
                     httpOnly: true
                 })
-                .json(Message.ok());
+                .json(u);
         })
         .catch((err: DiscordError) => {
             console.error(`Discord oauth2 error: ${err.message}`);

@@ -1,51 +1,43 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, Table } from 'react-bootstrap';
-import { ClientChallenge, CreateTitleParams, Message, Pool, TitleExt } from '../../../common/api/models';
-import { fetchClientChallenge, fetchPools, newPool, newTitle } from '../api/challenge';
+import { CreateTitleParams, Message, TitleExt } from '../../../common/api/models';
+import { newTitle } from '../api';
 import AddPool from '../components/AddPool';
 import AddTitle from '../components/AddTitle';
 import DefaultLayout from '../components/layout/DefaultLayout';
 import PoolSelector from '../components/PoolSelector';
-import { getPageParams, PageProps } from '../utils/page';
+import { useChallengeId, useDispatch } from '../hooks';
+import { emitError, fetchChallenge, fetchPools } from '../stateSlice';
 
-
-export default function PoolsPage({ user }: PageProps): JSX.Element {
-    const challengeId = getPageParams().challengeId;
+export default function PoolsPage(): JSX.Element {
+    const cid = useChallengeId();
+    const dispatch = useDispatch();
     const [titles, setTitles] = useState<TitleExt[]>([]);
-    const [challenge, setChallenge] = useState<ClientChallenge>();
-    const [pools, setPools] = useState<Pool[]>([]);
     const [selectedPoolName, setSelectedPoolName] = useState('');
-    const [errs, setErrs] = useState<string[]>([]);
 
-    async function addPool(pool: Pool) {
-        newPool(challengeId, pool)
-            .then(pool => setPools([...pools, pool]))
-            .catch((err: Message) => setErrs([...errs, err.message]));
-    }
-
-    async function addTitle(poolName: string, title: CreateTitleParams) {
-        newTitle(challengeId, poolName, title).then(t => {
+    function addTitle(poolName: string, title: CreateTitleParams) {
+        newTitle(cid, poolName, title).then(t => {
             if (poolName == selectedPoolName)
                 setTitles([...titles, t]);
-        }).catch((err: Message) => setErrs([...errs, err.message]));
+        }).catch((err: Message) => dispatch(emitError(err.message)));
     }
 
     useEffect(() => {
-        fetchPools(challengeId).then(setPools);
-        fetchClientChallenge(challengeId).then(setChallenge);
+        dispatch(fetchChallenge(cid));
+        dispatch(fetchPools(cid));
     }, []);
 
     return (
-        <DefaultLayout challengeId={challengeId} errors={errs}>
+        <DefaultLayout>
             <Row>
                 <Col sm="3" className="mb-2">
                     <Card className="mb-2">
                         <Card.Body>
-                            <PoolSelector challengeId={challengeId} pools={pools} setTitles={setTitles} setPoolName={setSelectedPoolName} />
-                            <AddPool user={user} challenge={challenge} onAdd={addPool} />
+                            <PoolSelector setTitles={setTitles} setPoolName={setSelectedPoolName} />
+                            <AddPool />
                         </Card.Body>
                     </Card>
-                    <AddTitle pools={pools} challenge={challenge} onAdd={addTitle} />
+                    <AddTitle onAdd={addTitle} />
                 </Col>
                 <Col sm="7">
                     <Card>

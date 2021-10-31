@@ -1,39 +1,48 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Container, Toast, ToastContainer } from 'react-bootstrap';
+import { useDispatch } from 'react-redux';
+import { useChallengeId, useSelector } from '../../hooks';
+import { hideError } from '../../stateSlice';
 import ChallengeNavbar from './ChallengeNavbar';
 
 interface DefaultLayoutProps {
-    challengeId?: number;
-    errors?: string[];
     children?: React.ReactNode;
 }
 
-export default function DefaultLayout({ challengeId, errors, children }: DefaultLayoutProps): JSX.Element {
-    const [showLastErr, setShowLastErr] = useState(false);
+export default function DefaultLayout({ children }: DefaultLayoutProps): JSX.Element {
+    const challengeId = useChallengeId();
+    const errors = useSelector(state => state.errors);
+    const dispatch = useDispatch();
+    let toast = null;
 
-    useEffect(() => setShowLastErr(errors !== undefined && errors.length > 0), [errors]);
+    if (errors.length > 0) {
+        const last = errors[errors.length - 1];
+        toast = (
+            <ToastContainer className="position-fixed bottom-0 start-50 translate-middle-x mb-2">
+                <Toast onClose={() => dispatch(hideError(errors.length - 1))} show={last.show}>
+                    <Toast.Header>
+                        <strong className="me-auto">Error</strong>
+                    </Toast.Header>
+                    <Toast.Body>
+                        {last.message}
+                    </Toast.Body>
+                </Toast>
+            </ToastContainer>
+        );
+    }
 
     return (
         <div>
             {
-                challengeId === undefined
+                isNaN(challengeId)
                     ? null
-                    : <ChallengeNavbar challengeId={challengeId} />
+                    : <ChallengeNavbar />
             }
 
             <Container className="mt-2">
                 {children}
             </Container>
-            <ToastContainer className="position-fixed bottom-0 start-50 translate-middle-x mb-2">
-                <Toast onClose={() => setShowLastErr(false)} show={showLastErr}>
-                    <Toast.Header>
-                        <strong className="me-auto">Error</strong>
-                    </Toast.Header>
-                    <Toast.Body>
-                        {errors && errors.length > 0 ? errors[errors.length - 1] : ''}
-                    </Toast.Body>
-                </Toast>
-            </ToastContainer>
+            {toast}
         </div>
     );
 }

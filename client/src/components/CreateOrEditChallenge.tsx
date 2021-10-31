@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Form, Card, Button } from 'react-bootstrap';
+import { useHistory } from 'react-router';
 import showdown from 'showdown';
 import { CreateChallengeParams } from '../../../common/api/models';
+import { editChallenge, newChallenge } from '../api';
 import DefaultLayout from '../components/layout/DefaultLayout';
+import { useSelector } from '../hooks';
 
-interface CreateOrEditChallengeProps {
-    challenge?: CreateChallengeParams,
-    onSubmit(params: CreateChallengeParams): void
-}
-
-export default function CreateOrEditChallenge(props: CreateOrEditChallengeProps): JSX.Element {
+export default function CreateOrEditChallenge(): JSX.Element {
+    const history = useHistory();
+    const oldChallenge = useSelector(state => state.challenge);
     const [challenge, setChallenge] = useState<CreateChallengeParams>({
         name: '',
         allowHidden: true,
@@ -18,7 +18,7 @@ export default function CreateOrEditChallenge(props: CreateOrEditChallengeProps)
     });
     const [preview, setPreview] = useState('');
 
-    async function updateLivePreview(text: string) {
+    function updateLivePreview(text: string) {
         const converter = new showdown.Converter({
             smoothLivePreview: true
         });
@@ -29,26 +29,33 @@ export default function CreateOrEditChallenge(props: CreateOrEditChallengeProps)
         });
     }
 
-    async function switchAllowHidden() {
+    function switchAllowHidden() {
         setChallenge({
             ...challenge,
             allowHidden: !challenge.allowHidden
         });
     }
 
-    async function update(e: React.ChangeEvent<HTMLInputElement>) {
+    function update(e: React.ChangeEvent<HTMLInputElement>) {
         setChallenge({
             ...challenge,
             [e.target.id]: e.target.value
         });
     }
 
+    function onSubmit() {
+        (oldChallenge === undefined
+            ? newChallenge(challenge)
+            : editChallenge({ ...oldChallenge, ...challenge }))
+            .then(c => history.push(`/challenge/${c.id}`));
+    }
+
     useEffect(() => {
-        if (props.challenge) {
-            updateLivePreview(props.challenge.description);
-            setChallenge(props.challenge);
+        if (oldChallenge) {
+            updateLivePreview(oldChallenge.description);
+            setChallenge(oldChallenge);
         }
-    }, [props.challenge]);
+    }, [oldChallenge]);
 
     return (
         <DefaultLayout>
@@ -59,7 +66,7 @@ export default function CreateOrEditChallenge(props: CreateOrEditChallengeProps)
                         <Card.Body>
                             <Form onSubmit={(e) => {
                                 e.preventDefault();
-                                props.onSubmit(challenge);
+                                onSubmit();
                             }}>
                                 <Row className="mb-3">
                                     <Col md="6">
@@ -95,7 +102,7 @@ export default function CreateOrEditChallenge(props: CreateOrEditChallengeProps)
                                     </Col>
                                 </Row>
                                 <Button type="submit" className="float-end">
-                                    {props.challenge === undefined ? 'Create' : 'Edit'} Challenge
+                                    {oldChallenge === undefined ? 'Create' : 'Edit'} Challenge
                                 </Button>
                             </Form>
                         </Card.Body>

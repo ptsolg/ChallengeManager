@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
-import { User } from '../../common/api/models';
-import { login, logout } from './api/auth';
-import { fetchCurrentUser } from './api/user';
 import Header from './components/layout/Header';
 import EditChallengePage from './pages/EditChallengePage';
 import IndexPage from './pages/IndexPage';
@@ -11,29 +9,23 @@ import OverviewPage from './pages/OverviewPage';
 import ParticipantsPage from './pages/ParticipantsPage';
 import PoolsPage from './pages/PoolsPage';
 import RoundsPage from './pages/RoundsPage';
-
-import 'bootstrap/dist/css/bootstrap.min.css';
+import { fetchCurrentUser, login } from './stateSlice';
+import { useDispatch } from './hooks';
 
 export default function App(): JSX.Element {
-    const [user, setUser] = useState<User | undefined>(undefined);
-
+    const dispatch = useDispatch();
     useEffect(() => {
-        fetchCurrentUser().then(u => {
-            if (u !== undefined) {
-                setUser(u);
-                return;
-            }
+        dispatch(fetchCurrentUser()).then(action => {
             const params = new URLSearchParams(window.location.search);
             const code = params.get('code');
-            if (code !== null) {
-                login(code).then(fetchCurrentUser).then(setUser);
-            }
+            if (action.payload === undefined && code !== null)
+                dispatch(login(code));
         });
     }, []);
 
     return (
         <Router>
-            <Header user={user} logout={() => { logout().then(_ => setUser(undefined)); }} />
+            <Header />
             <Switch>
                 <Route path="/challenge/:challengeId(\d+)/rounds">
                     <RoundsPage />
@@ -42,10 +34,10 @@ export default function App(): JSX.Element {
                     <ParticipantsPage />
                 </Route>
                 <Route path="/challenge/:challengeId(\d+)/pools">
-                    <PoolsPage user={user} />
+                    <PoolsPage />
                 </Route>
                 <Route path="/challenge/:challengeId(\d+)">
-                    <OverviewPage user={user} />
+                    <OverviewPage />
                 </Route>
                 <Route path="/new-challenge">
                     <NewChallengePage />
@@ -54,9 +46,9 @@ export default function App(): JSX.Element {
                     <EditChallengePage />
                 </Route>
                 <Route path="/">
-                    <IndexPage user={user} />
+                    <IndexPage />
                 </Route>
             </Switch>
-        </Router>
+        </Router >
     );
 }

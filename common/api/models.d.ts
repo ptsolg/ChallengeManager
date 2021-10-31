@@ -18,8 +18,8 @@ export interface CreateChallengeParams {
 
 export interface Challenge extends CreateChallengeParams {
     id: number;
-    startTime: Date;
-    finishTime: Date | null;
+    startTime: string;
+    finishTime: string | null;
     creatorId: number;
 }
 
@@ -73,15 +73,15 @@ export interface TitleExt extends Title {
 
 export interface StartRoundParams {
     poolName: string;
-    finishTime: Date;
+    finishTime: string;
 }
 
 export interface Round {
     id: number;
     num: number;
     challengeId: number;
-    startTime: Date;
-    finishTime: Date;
+    startTime: string;
+    finishTime: string;
     isFinished: boolean;
 }
 
@@ -104,11 +104,11 @@ export interface RoundExt extends Round {
 export interface Award {
     participantId: number;
     url: string | null;
-    time: Date;
+    time: string;
 }
 
 export interface KarmaHistory {
     userId: number;
     karma: number;
-    time: Date;
+    time: string;
 }

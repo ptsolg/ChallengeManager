@@ -1,13 +1,11 @@
 import React from 'react';
 import { Navbar, Nav } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
+import { useChallengeId } from '../../hooks';
 
-interface ChallengeNavbarProps {
-    challengeId: number
-}
-
-export default function ChallengeNavbar({ challengeId }: ChallengeNavbarProps): JSX.Element {
-    const url = `/challenge/${challengeId}`;
+export default function ChallengeNavbar(): JSX.Element {
+    const cid = useChallengeId();
+    const url = `/challenge/${cid}`;
     return (
         <Navbar variant="dark" bg="black" className="py-0">
             <Navbar.Collapse>

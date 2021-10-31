@@ -1,16 +1,15 @@
 import React from 'react';
 import { Card, Row, Col, Button } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
-import { ClientChallenge, User } from '../../../common/api/models';
+import { useSelector, useDispatch, useChallengeId } from '../hooks';
+import { leave, join } from '../stateSlice';
 
-interface ChallengeInfoProps {
-    challenge?: ClientChallenge;
-    user?: User;
-    onJoin(): void;
-    onLeave(): void;
-}
+export default function ChallengeInfo(): JSX.Element {
+    const cid = useChallengeId();
+    const challenge = useSelector(state => state.challenge);
+    const user = useSelector(state => state.user);
+    const dispatch = useDispatch();
 
-export default function ChallengeInfo({ challenge, user, onJoin, onLeave }: ChallengeInfoProps): JSX.Element {
     if (challenge === undefined)
         return <></>;
 
@@ -57,10 +56,10 @@ export default function ChallengeInfo({ challenge, user, onJoin, onLeave }: Chal
                         {
                             challenge.isParticipant
                                 ?
-                                <Button onClick={onLeave} variant="danger" className="w-100">Leave</Button>
+                                <Button onClick={() => dispatch(leave(cid))} variant="danger" className="w-100">Leave</Button>
                                 :
                                 <Button
-                                    onClick={onJoin}
+                                    onClick={() => dispatch(join(cid))}
                                     variant={challenge.canJoin ? 'success' : 'secondary'}
                                     className="w-100"
                                     disabled={!challenge.canJoin}>Join</Button>

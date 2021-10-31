@@ -1,19 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Card, Button, Form, Row, Col } from 'react-bootstrap';
-import { ClientChallenge, Pool, Round, RoundExt } from '../../../common/api/models';
-import { fetchClientChallenge, fetchPools, startRound } from '../api/challenge';
+import { useDispatch, useSelector } from '../hooks';
+import { finishRound, startRound } from '../stateSlice';
 import DropdownPoolSelector from './DropdownPoolSelector';
 
-interface StartFinishRoundProps {
-    challengeId: number;
-    rounds: Round[];
-    onStart(round: RoundExt): void;
-    onFinish(): void;
-}
-
-export default function StartFinishRound({ challengeId, rounds, onStart, onFinish }: StartFinishRoundProps): JSX.Element {
-    const [challenge, setChallenge] = useState<ClientChallenge>();
-    const [pools, setPools] = useState<Pool[]>([]);
+export default function StartFinishRound(): JSX.Element {
+    const challenge = useSelector(state => state.challenge);
+    const pools = useSelector(state => state.pools);
+    const rounds = useSelector(state => state.rounds);
+    const dispatch = useDispatch();
     const [poolName, setPoolName] = useState('');
     const [numDays, setNumDays] = useState('7');
 
@@ -24,18 +19,22 @@ export default function StartFinishRound({ challengeId, rounds, onStart, onFinis
     }
 
     function start() {
-        const finish = new Date(Date.now());
-        finish.setDate(finish.getDate() + parseInt(numDays));
-        startRound(challengeId, {
-            poolName: poolName,
-            finishTime: finish
-        }).then(onStart);
+        if (challenge !== undefined) {
+            const finish = new Date(Date.now());
+            finish.setDate(finish.getDate() + parseInt(numDays));
+            dispatch(startRound({
+                challengeId: challenge.id, params: {
+                    poolName: poolName,
+                    finishTime: finish.toISOString()
+                }
+            }));
+        }
     }
 
-    useEffect(() => {
-        fetchPools(challengeId).then(setPools);
-        fetchClientChallenge(challengeId).then(setChallenge);
-    }, []);
+    function finish() {
+        if (challenge !== undefined)
+            dispatch(finishRound(challenge.id));
+    }
 
     if (challenge === undefined || !challenge.isCreator)
         return <></>;
@@ -49,7 +48,7 @@ export default function StartFinishRound({ challengeId, rounds, onStart, onFinis
                     }}>
                         <Form.Group>
                             <Form.Label>Pool {pools.length}</Form.Label>
-                            <DropdownPoolSelector className="mb-2" pools={pools} onSelect={(pool) => setPoolName(pool.name)} />
+                            <DropdownPoolSelector className="mb-2" onSelect={(pool) => setPoolName(pool.name)} />
                         </Form.Group>
                         <Form.Group>
                             <Form.Label>Length (days)</Form.Label>
@@ -70,7 +69,7 @@ export default function StartFinishRound({ challengeId, rounds, onStart, onFinis
     return (
         <Card>
             <Card.Body>
-                <Button onClick={onFinish}>Finish round</Button>
+                <Button onClick={finish}>Finish round</Button>
             </Card.Body>
         </Card>
     );

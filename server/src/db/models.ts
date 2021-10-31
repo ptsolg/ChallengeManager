@@ -128,8 +128,8 @@ export class Challenge extends Relation implements api.Challenge {
         'award_url', 'creator_id', 'allow_hidden', 'description']);
     id: number;
     name: string;
-    startTime: Date;
-    finishTime: Date | null;
+    startTime: string;
+    finishTime: string | null;
     awardUrl: string | null;
     creatorId: number;
     allowHidden: boolean;
@@ -139,8 +139,8 @@ export class Challenge extends Relation implements api.Challenge {
         db: CommonQueryMethodsType,
         id: number,
         name: string,
-        startTime: Date,
-        finishTime: Date | null,
+        startTime: string,
+        finishTime: string | null,
         awardUrl: string | null,
         creatorId: number,
         allowHidden: boolean,
@@ -161,10 +161,8 @@ export class Challenge extends Relation implements api.Challenge {
         return new Challenge(db,
             nonNull(row, 'id'),
             nonNull(row, 'name'),
-            new Date(nonNull(row, 'start_time')),
-            row['finish_time']
-                ? new Date(row['finish_time'] as string)
-                : null,
+            nonNull(row, 'start_time'),
+            maybeNull(row, 'finish_time'),
             maybeNull(row, 'award_url'),
             nonNull(row, 'creator_id'),
             nonNull(row, 'allow_hidden'),
@@ -195,10 +193,10 @@ export class Challenge extends Relation implements api.Challenge {
         allowHidden: boolean,
         description: string
     ): Promise<Challenge> {
-        const startTime = new Date(Date.now());
+        const startTime = new Date(Date.now()).toISOString();
         return db.oneFirst<number>(sql`
             INSERT INTO challenge (name, start_time, award_url, creator_id, allow_hidden, description)
-            VALUES (${name}, ${startTime.toISOString()}, ${awardUrl},
+            VALUES (${name}, ${startTime}, ${awardUrl},
                 ${creatorId}, ${allowHidden}, ${description})
             RETURNING id`)
             .then(id => new Challenge(db, id, name, startTime, null, awardUrl,
@@ -319,13 +317,13 @@ export class Challenge extends Relation implements api.Challenge {
     }
 
     addRound(finish: Date): Promise<Round> {
-        const start = new Date(Date.now());
+        const start = new Date(Date.now()).toISOString();
         return this.db.one<{ id: number, num: number }>(sql`
             INSERT INTO round (num, challenge_id, start_time, finish_time)
-                SELECT COUNT(*), ${this.id}, ${start.toISOString()}, ${finish.toISOString()}
+                SELECT COUNT(*), ${this.id}, ${start}, ${finish.toISOString()}
                 FROM round
                 WHERE challenge_id = ${this.id}
-            RETURNING id, num`).then(x => new Round(this.db, x.id, x.num, this.id, start, finish, false));
+            RETURNING id, num`).then(x => new Round(this.db, x.id, x.num, this.id, start, finish.toISOString(), false));
     }
 
     fetchRounds(): Promise<Round[]> {
@@ -573,8 +571,8 @@ export class Round extends Relation implements api.Round {
     id: number;
     num: number;
     challengeId: number;
-    startTime: Date;
-    finishTime: Date;
+    startTime: string;
+    finishTime: string;
     isFinished: boolean;
 
     constructor(
@@ -582,8 +580,8 @@ export class Round extends Relation implements api.Round {
         id: number,
         num: number,
         challengeId: number,
-        startTime: Date,
-        finishTime: Date,
+        startTime: string,
+        finishTime: string,
         isFinished: boolean,
     ) {
         super(db);
@@ -607,8 +605,8 @@ export class Round extends Relation implements api.Round {
 
     update(): Promise<void> {
         return this.db.query(sql`
-            UPDATE round SET num = ${this.num}, start_time = ${this.startTime.toISOString()},
-                finish_time = ${this.finishTime.toISOString()}, is_finished = ${this.isFinished}
+            UPDATE round SET num = ${this.num}, start_time = ${this.startTime},
+                finish_time = ${this.finishTime}, is_finished = ${this.isFinished}
             WHERE id = ${this.id}`).then(_ => { return; });
     }
 
@@ -661,13 +659,13 @@ export class Award extends Relation implements api.Award {
     static COLS = new Columns(['participant_id', 'url', 'time']);
     participantId: number;
     url: string | null;
-    time: Date;
+    time: string;
 
     constructor(
         db: CommonQueryMethodsType,
         participantId: number,
         url: string | null,
-        time: Date,
+        time: string,
     ) {
         super(db);
         this.participantId = participantId;
@@ -679,7 +677,7 @@ export class Award extends Relation implements api.Award {
         return new Award(db,
             nonNull(row, 'participant_id'),
             maybeNull(row, 'url'),
-            new Date(nonNull<string>(row, 'time')));
+            nonNull(row, 'time'));
     }
 }
 
@@ -687,13 +685,13 @@ export class KarmaHistory extends Relation implements api.KarmaHistory {
     static COLS = new Columns(['user_id', 'karma', 'time']);
     userId: number;
     karma: number;
-    time: Date;
+    time: string;
 
     constructor(
         db: CommonQueryMethodsType,
         userId: number,
         karma: number,
-        time: Date,
+        time: string,
     ) {
         super(db);
         this.userId = userId;
@@ -705,6 +703,6 @@ export class KarmaHistory extends Relation implements api.KarmaHistory {
         return new KarmaHistory(db,
             nonNull(row, 'user_id'),
             nonNull(row, 'karma'),
-            new Date(nonNull(row, 'time')));
+            nonNull(row, 'time'));
     }
 }

@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, Button, Table } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
 import { Challenge } from '../../../common/api/models';
-import { fetchChallenges } from '../api/challenge';
+import { fetchChallenges } from '../api';
 import DefaultLayout from '../components/layout/DefaultLayout';
-import { PageProps } from '../utils/page';
+import { useSelector } from '../hooks';
 
-export default function IndexPage({ user }: PageProps): JSX.Element {
+export default function IndexPage(): JSX.Element {
+    const user = useSelector((state) => state.user);
     const [challenges, setChallenges] = useState<Challenge[]>([]);
     useEffect(() => {
         fetchChallenges().then(setChallenges);
