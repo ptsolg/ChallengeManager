@@ -3,6 +3,7 @@ import { Card, Form, Row, Col, Button } from 'react-bootstrap';
 import { CreateTitleParams } from '../../../common/api/models';
 import { useChallenge } from '../hooks';
 import DropdownPoolSelector from './DropdownPoolSelector';
+import ParticipantSelector from './ParticipantSelector';
 
 interface AddTitleProps {
     onAdd(poolName: string, title: CreateTitleParams): void
@@ -12,6 +13,7 @@ export default function AddTitle({ onAdd }: AddTitleProps): JSX.Element {
     const challenge = useChallenge();
     const pools = challenge?.pools ?? [];
     const [title, setTitle] = useState<CreateTitleParams>({
+        userId: null,
         name: '',
         url: '',
         isHidden: false,
@@ -51,6 +53,16 @@ export default function AddTitle({ onAdd }: AddTitleProps): JSX.Element {
                         <Form.Label>Pool</Form.Label>
                         <DropdownPoolSelector onSelect={(pool) => setPoolName(pool.name)} />
                     </Form.Group>
+                    {
+                        challenge.isCreator
+                            ?
+                            <Form.Group className="mb-3">
+                                <Form.Label>Participant</Form.Label>
+                                <ParticipantSelector onSelect={(p) => setTitle({ ...title, userId: p.userId })} />
+                            </Form.Group>
+                            :
+                            null
+                    }
                     <Row>
                         <Col lg="7"></Col>
                         <Col lg="5">

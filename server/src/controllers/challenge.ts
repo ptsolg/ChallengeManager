@@ -132,6 +132,7 @@ export async function newPool(req: Request, res: JsonResponse<api.Pool>): Promis
 
 function getTitleParams(req: Request): api.CreateTitleParams {
     return {
+        userId: maybeNull(req, 'userId'),
         name: nonNull(req, 'name'),
         url: maybeNull(req, 'url'),
         isHidden: nonNull(req, 'isHidden'),
@@ -147,12 +148,17 @@ export async function newTitle(
     const p = await c.requirePool(getPoolName(req));
     Error.throwIf(await c.hasTitle(params.name), 400, `Title "${params.name}" already exists"`);
     // todo: isHidden, score, duration, etc...
-    const participant = await c.requireParticipant(getUid(req));
+    let proposer = getUid(req);
+    if (params.userId !== null) {
+        Error.throwIf(getUid(req) !== c.creatorId, 400, "You don't have permissions to do that");
+        proposer = params.userId;
+    }
+    const participant = await c.requireParticipant(proposer);
     const t = await p.addTitle(participant.id, params.name, params.url,
         params.isHidden, null, null, null, null);
     return res.json({
         ...t,
-        proposer: await User.require(db, getUid(req))
+        proposer: await User.require(db, proposer)
     });
 }
 
