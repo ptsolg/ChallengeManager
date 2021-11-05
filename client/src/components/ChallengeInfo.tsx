@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, Row, Col, Button } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
+import { formatDate } from '../date';
 import { useDispatch, useChallenge, useUser, useChallengeId } from '../hooks';
 import { leave, join } from '../stateSlice';
 
@@ -19,11 +20,11 @@ export default function ChallengeInfo(): JSX.Element {
                 <p className="mb-3 text-center"><strong>{challenge.name}</strong></p>
                 <Row className="mb-2">
                     <Col lg="4"><dt>Start time</dt></Col>
-                    <Col lg="8"><dd>{challenge?.startTime.toLocaleString()}</dd></Col>
+                    <Col lg="8"><dd>{formatDate(challenge?.startTime)}</dd></Col>
                 </Row>
                 <Row className="mb-2">
                     <Col lg="4"><dt>Finish time</dt></Col>
-                    <Col lg="8"><dd>{challenge?.finishTime ? challenge.finishTime.toLocaleString() : '-'}</dd></Col>
+                    <Col lg="8"><dd>{formatDate(challenge?.finishTime)}</dd></Col>
                 </Row>
                 <Row className="mb-2">
                     <Col lg="4"><dt>Allow hidden</dt></Col>
