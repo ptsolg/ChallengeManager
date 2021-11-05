@@ -3,23 +3,22 @@ import { Card, Button, Form, Row, Col } from 'react-bootstrap';
 import { useChallenge, useDispatch } from '../hooks';
 import { extendRound, finishRound, startRound } from '../stateSlice';
 import DropdownPoolSelector from './DropdownPoolSelector';
+import NumericControl from './NumericControl';
 
-export default function StartFinishRound(): JSX.Element {
+interface StartFinishRoundProps {
+    className?: string;
+}
+
+export default function StartFinishRound(props: StartFinishRoundProps): JSX.Element {
     const challenge = useChallenge();
     const dispatch = useDispatch();
     const [poolName, setPoolName] = useState('');
-    const [numDays, setNumDays] = useState('7');
-
-    function update(e: React.ChangeEvent<HTMLInputElement>) {
-        if (!/^\d*$/.test(e.target.value))
-            return;
-        setNumDays(e.target.value);
-    }
+    const [numDays, setNumDays] = useState<number>();
 
     function start() {
-        if (challenge !== undefined) {
+        if (challenge !== undefined && numDays !== undefined) {
             const finish = new Date(Date.now());
-            finish.setDate(finish.getDate() + parseInt(numDays));
+            finish.setDate(finish.getDate() + numDays);
             dispatch(startRound({
                 challengeId: challenge.id, params: {
                     poolName: poolName,
@@ -30,10 +29,10 @@ export default function StartFinishRound(): JSX.Element {
     }
 
     function extend() {
-        if (challenge !== undefined) {
+        if (challenge !== undefined && numDays !== undefined) {
             dispatch(extendRound({
                 challengeId: challenge.id, params: {
-                    numDays: parseInt(numDays)
+                    numDays: numDays
                 }
             }));
         }
@@ -48,7 +47,7 @@ export default function StartFinishRound(): JSX.Element {
         return <></>;
     if (challenge.rounds.length === 0 || challenge.rounds[challenge.rounds.length - 1].isFinished)
         return (
-            <Card>
+            <Card className={props.className}>
                 <Card.Body>
                     <Form onSubmit={(e) => {
                         e.preventDefault();
@@ -62,7 +61,7 @@ export default function StartFinishRound(): JSX.Element {
                             <Form.Label>Length (days)</Form.Label>
                             <Row>
                                 <Col lg="6" className="mb-2">
-                                    <Form.Control onChange={update} value={numDays.toString()} required />
+                                    <NumericControl onChange={setNumDays} required />
                                 </Col>
                                 <Col lg="6">
                                     <Button type="submit" className="w-100">Start round</Button>
@@ -80,7 +79,7 @@ export default function StartFinishRound(): JSX.Element {
                 <Form.Label>Length (days</Form.Label>
                 <Row className="mb-3">
                     <Col lg="6">
-                        <Form.Control onChange={update} value={numDays.toString()} />
+                        <NumericControl onChange={setNumDays} />
                     </Col>
                     <Col>
                         <Button className="w-100" onClick={extend}>Extend Round</Button>
