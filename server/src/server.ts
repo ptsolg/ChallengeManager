@@ -13,8 +13,8 @@ const corsOptions = {
 };
 
 async function handleError(err: unknown, req: Request, res: Response, _: NextFunction): Promise<Response> {
+    console.log(err);
     if (err instanceof Error) {
-        console.log(err);
         return res.status(err.responseCode).json({ message: err.message });
     }
     return res.status(500).json({ message: 'Internal server error' });

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Challenge, ClientChallenge, CreateChallengeParams, CreatePoolParams, CreateTitleParams, ParticipantExt, Pool, RollExt, Round, RoundExt, StartRoundParams, TitleExt } from '../../common/api/models';
+import { Challenge, ClientChallenge, CreateChallengeParams, CreatePoolParams, CreateTitleParams, ExtendRoundParams, ParticipantExt, Pool, RollExt, Round, RoundExt, StartRoundParams, TitleExt } from '../../common/api/models';
 import { User } from '../../common/api/models';
 
 const api = axios.create({
@@ -74,6 +74,10 @@ export async function startRound(challengeId: number, params: StartRoundParams):
 
 export async function finishRound(challengeId: number): Promise<Round> {
     return api.get(`/challenge/${challengeId}/finishRound`, { withCredentials: true }).then(x => x.data);
+}
+
+export async function extendRound(challengeId: number, params: ExtendRoundParams): Promise<Round> {
+    return api.post(`/challenge/${challengeId}/extendRound`, params, { withCredentials: true }).then(x => x.data);
 }
 
 export async function login(authorizationCode: string): Promise<User> {

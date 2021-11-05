@@ -4,8 +4,9 @@ import { RollExt } from '../../../common/api/models';
 import { fetchRolls } from '../api';
 import DefaultLayout from '../components/layout/DefaultLayout';
 import StartFinishRound from '../components/StartFinishRound';
+import { formatDate } from '../date';
 import { useChallengeId, useDispatch, useRounds } from '../hooks';
-import { fetchRounds } from '../stateSlice';
+import { fetchChallenge, fetchRounds } from '../stateSlice';
 
 export default function RoundsPage(): JSX.Element {
     const cid = useChallengeId();
@@ -20,6 +21,7 @@ export default function RoundsPage(): JSX.Element {
     }
 
     useEffect(() => {
+        dispatch(fetchChallenge(cid));
         dispatch(fetchRounds(cid));
     }, []);
 
@@ -48,6 +50,14 @@ export default function RoundsPage(): JSX.Element {
                                 }
                             </Pagination>
                             <hr />
+                            <Row className="mb-2">
+                                <Col lg="2"><dt>Start Time</dt></Col>
+                                <Col lg="4"><dd>{selectedRoundNum === -1 ? '' : formatDate(rounds[selectedRoundNum].startTime)}</dd></Col>
+                            </Row>
+                            <Row className="mb-3">
+                                <Col lg="2"><dt>Finish Time</dt></Col>
+                                <Col lg="4"><dd>{selectedRoundNum === -1 ? '' : formatDate(rounds[selectedRoundNum].finishTime)}</dd></Col>
+                            </Row>
                             <Table striped>
                                 <thead>
                                     <tr>

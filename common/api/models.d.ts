@@ -72,6 +72,10 @@ export interface TitleExt extends Title {
     proposer: User
 }
 
+export interface ExtendRoundParams {
+    numDays: number;
+}
+
 export interface StartRoundParams {
     poolName: string;
     finishTime: string;

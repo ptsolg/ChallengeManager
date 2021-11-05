@@ -226,3 +226,20 @@ export async function finishRound(
     // todo: karma
     return res.json(lr);
 }
+
+function getExtendRoundParams(req: Request): api.ExtendRoundParams {
+    return {
+        numDays: nonNull(req, 'numDays'),
+    };
+}
+
+export async function extendRound(req: Request, res: JsonResponse<api.Round>): Promise<Response> {
+    const c = await Challenge.require(db, getCid(req));
+    const lr = await c.requireLastRound();
+    const params = getExtendRoundParams(req);
+    const finish = new Date(lr.finishTime);
+    finish.setDate(finish.getDate() + params.numDays);
+    lr.finishTime = finish.toISOString();
+    await lr.update();
+    return res.json(lr);
+}

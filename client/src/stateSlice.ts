@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { ClientChallenge, CreatePoolParams, Message, ParticipantExt, Pool, Round, StartRoundParams, User } from '../../common/api/models';
+import { ClientChallenge, CreatePoolParams, ExtendRoundParams, Message, ParticipantExt, Pool, Round, StartRoundParams, User } from '../../common/api/models';
 import * as api from './api';
 
 export interface ChallengeState extends ClientChallenge {
@@ -58,6 +58,11 @@ export const startRound = createAsyncThunk(
 export const finishRound = createAsyncThunk(
     'state/finishRound',
     (cid: number) => api.finishRound(cid)
+);
+
+export const extendRound = createAsyncThunk(
+    'state/extendRound',
+    ({ challengeId, params }: { challengeId: number, params: ExtendRoundParams }) => api.extendRound(challengeId, params)
 );
 
 export const fetchPools = createAsyncThunk(
@@ -164,6 +169,10 @@ const stateSlice = createSlice({
             getChallenge(state).rounds.push(action.payload);
         },
         [finishRound.fulfilled.type]: (state, action: PayloadAction<Round>) => {
+            const c = getChallenge(state);
+            c.rounds[c.rounds.length - 1] = action.payload;
+        },
+        [extendRound.fulfilled.type]: (state, action: PayloadAction<Round>) => {
             const c = getChallenge(state);
             c.rounds[c.rounds.length - 1] = action.payload;
         },

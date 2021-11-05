@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Button, Form, Row, Col } from 'react-bootstrap';
 import { useChallenge, useDispatch } from '../hooks';
-import { finishRound, startRound } from '../stateSlice';
+import { extendRound, finishRound, startRound } from '../stateSlice';
 import DropdownPoolSelector from './DropdownPoolSelector';
 
 export default function StartFinishRound(): JSX.Element {
@@ -24,6 +24,16 @@ export default function StartFinishRound(): JSX.Element {
                 challengeId: challenge.id, params: {
                     poolName: poolName,
                     finishTime: finish.toISOString()
+                }
+            }));
+        }
+    }
+
+    function extend() {
+        if (challenge !== undefined) {
+            dispatch(extendRound({
+                challengeId: challenge.id, params: {
+                    numDays: parseInt(numDays)
                 }
             }));
         }
@@ -63,11 +73,25 @@ export default function StartFinishRound(): JSX.Element {
                 </Card.Body>
             </Card>
         );
-    // todo: Prolong round
+
     return (
         <Card>
             <Card.Body>
-                <Button onClick={finish}>Finish round</Button>
+                <Form.Label>Length (days</Form.Label>
+                <Row className="mb-3">
+                    <Col lg="6">
+                        <Form.Control onChange={update} value={numDays.toString()} />
+                    </Col>
+                    <Col>
+                        <Button className="w-100" onClick={extend}>Extend Round</Button>
+                    </Col>
+                </Row>
+                <Row>
+                    <Col lg="6" />
+                    <Col lg="6">
+                        <Button className="w-100" onClick={finish}>Finish round</Button>
+                    </Col>
+                </Row>
             </Card.Body>
         </Card>
     );
