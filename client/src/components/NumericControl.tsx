@@ -12,10 +12,11 @@ export default function NumericControl(props: NumericControlProps): JSX.Element 
     const [num, setNum] = useState<string>(props.default === undefined ? '' : props.default.toString());
 
     function update(e: React.ChangeEvent<HTMLInputElement>) {
+        const s = e.target.value.trim();
         if (!/^\d*$/.test(e.target.value))
             return;
-        setNum(e.target.value.trim());
-        props.onChange(num === '' ? undefined : parseInt(num));
+        setNum(s);
+        props.onChange(s === '' ? undefined : parseInt(s));
     }
 
     return (
