@@ -5,11 +5,11 @@ import { extendRound, finishRound, startRound } from '../stateSlice';
 import DropdownPoolSelector from './DropdownPoolSelector';
 import NumericControl from './NumericControl';
 
-interface StartFinishRoundProps {
+interface ManageRoundProps {
     className?: string;
 }
 
-export default function StartFinishRound(props: StartFinishRoundProps): JSX.Element {
+export default function ManageRound(props: ManageRoundProps): JSX.Element {
     const challenge = useChallenge();
     const dispatch = useDispatch();
     const [poolName, setPoolName] = useState('');
@@ -74,14 +74,14 @@ export default function StartFinishRound(props: StartFinishRoundProps): JSX.Elem
         );
 
     return (
-        <Card>
+        <Card className={props.className}>
             <Card.Body>
-                <Form.Label>Length (days</Form.Label>
+                <Form.Label>Length (days)</Form.Label>
                 <Row className="mb-3">
                     <Col lg="6">
                         <NumericControl onChange={setNumDays} />
                     </Col>
-                    <Col>
+                    <Col lg="6">
                         <Button className="w-100" onClick={extend}>Extend Round</Button>
                     </Col>
                 </Row>

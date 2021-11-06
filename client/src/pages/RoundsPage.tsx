@@ -3,8 +3,7 @@ import { Row, Col, Card, Pagination, Table } from 'react-bootstrap';
 import { RollExt } from '../../../common/api/models';
 import { fetchRolls } from '../api';
 import DefaultLayout from '../components/layout/DefaultLayout';
-import StartFinishRound from '../components/StartFinishRound';
-import { formatDate } from '../date';
+import ManageRound from '../components/ManageRound';
 import { useChallengeId, useDispatch, useRounds } from '../hooks';
 import { fetchChallenge, fetchRounds } from '../stateSlice';
 
@@ -34,7 +33,7 @@ export default function RoundsPage(): JSX.Element {
         <DefaultLayout>
             <Row>
                 <Col sm="3">
-                    <StartFinishRound />
+                    <ManageRound className="mb-2" />
                 </Col>
                 <Col sm="7">
                     <Card>
