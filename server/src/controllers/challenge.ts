@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { DatabaseTransactionConnectionType } from 'slonik';
 import * as api from '../../../common/api/models';
 import { db } from '../db/db';
-import { Challenge, Participant, Round, Title, User } from '../db/models';
+import { Challenge, Participant, Title, User } from '../db/models';
 import { verifyToken } from '../utils/auth';
 import { Error } from '../utils/error';
 import { getCid, getPoolName, getUid, LoggedInUserRequest, maybeNull, nonNull } from '../utils/request';
@@ -48,10 +48,15 @@ export function getParticipants(req: Request, res: JsonResponse<api.ParticipantE
         .then(x => res.json(x));
 }
 
-export function getRounds(req: Request, res: JsonResponse<api.Round[]>): Promise<Response> {
-    return Challenge.require(db, getCid(req))
-        .then(c => c.fetchRounds())
-        .then(x => res.json(x));
+export async function getRounds(req: Request, res: JsonResponse<api.RoundExt[]>): Promise<Response> {
+    const c = await Challenge.require(db, getCid(req));
+    const rounds = await c.fetchRounds();
+    return res.json(await Promise.all(rounds.map(async (r) => {
+        return {
+            ...r,
+            rolls: await c.fetchRolls(r.num)
+        };
+    })));
 }
 
 export function newChallenge(req: LoggedInUserRequest, res: JsonResponse<api.Challenge>): Promise<Response> {
@@ -162,12 +167,6 @@ export async function newTitle(
     });
 }
 
-export function getRolls(req: Request, res: JsonResponse<api.RollExt[]>): Promise<Response> {
-    return Challenge.require(db, getCid(req))
-        .then(c => c.fetchRolls(parseInt(req.params['roundNum'])))
-        .then(x => res.json(x));
-}
-
 function getStartRoundParams(req: Request): api.StartRoundParams {
     return {
         poolName: nonNull(req, 'poolName'),
@@ -213,7 +212,7 @@ export async function startRound(
 export async function finishRound(
     transaction: DatabaseTransactionConnectionType,
     req: Request,
-    res: JsonResponse<Round>
+    res: JsonResponse<api.Round>
 ): Promise<Response> {
     const c = await Challenge.require(transaction, getCid(req));
     const lr = await c.requireLastRound();
@@ -242,4 +241,22 @@ export async function extendRound(req: Request, res: JsonResponse<api.Round>): P
     lr.finishTime = finish.toISOString();
     await lr.update();
     return res.json(lr);
+}
+
+function getRateTitleParams(req: Request): api.RateTitleParams {
+    return {
+        score: nonNull(req, 'score'),
+    };
+}
+
+export async function rateTitle(req: LoggedInUserRequest, res: JsonResponse<Message>): Promise<Response> {
+    const params = getRateTitleParams(req);
+    const c = await Challenge.require(db, getCid(req));
+    const lr = await c.requireLastRound();
+    Error.throwIf(Date.parse(lr.finishTime) < Date.now(), 400, 'Round has ended');
+    const p = await c.requireParticipant(getUid(req));
+    const r = await lr.requireRoll(p.id);
+    r.score = params.score;
+    await r.update();
+    return res.json(Message.ok());
 }

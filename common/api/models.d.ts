@@ -117,3 +117,7 @@ export interface KarmaHistory {
     karma: number;
     time: string;
 }
+
+export interface RateTitleParams {
+    score: number;
+}

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Challenge, ClientChallenge, CreateChallengeParams, CreatePoolParams, CreateTitleParams, ExtendRoundParams, ParticipantExt, Pool, RollExt, Round, RoundExt, StartRoundParams, TitleExt } from '../../common/api/models';
+import { Challenge, ClientChallenge, CreateChallengeParams, CreatePoolParams, CreateTitleParams, ExtendRoundParams, ParticipantExt, Pool, RateTitleParams, Round, RoundExt, StartRoundParams, TitleExt } from '../../common/api/models';
 import { User } from '../../common/api/models';
 
 const api = axios.create({
@@ -28,7 +28,7 @@ export async function fetchPools(challengeId: number): Promise<Pool[]> {
     return api.get(`/challenge/${challengeId}/pools`).then(x => x.data);
 }
 
-export async function fetchRounds(challengeId: number): Promise<Round[]> {
+export async function fetchRounds(challengeId: number): Promise<RoundExt[]> {
     return api.get(`/challenge/${challengeId}/rounds`).then(x => x.data);
 }
 
@@ -60,19 +60,19 @@ export async function fetchTitles(challengeId: number, poolName: string): Promis
     return api.get(`/challenge/${challengeId}/pools/${poolName}`).then(x => x.data);
 }
 
-export async function fetchRolls(challengeId: number, roundNum: number): Promise<RollExt[]> {
-    return api.get(`/challenge/${challengeId}/rounds/${roundNum}`).then(x => x.data);
-}
-
 export async function newTitle(challengeId: number, poolName: string, params: CreateTitleParams): Promise<TitleExt> {
     return api.post(`/challenge/${challengeId}/pools/${poolName}`, params, { withCredentials: true }).then(x => x.data);
+}
+
+export async function rateTitle(challengeId: number, params: RateTitleParams): Promise<void> {
+    return api.post(`/challenge/${challengeId}/rateTitle`, params, { withCredentials: true }).then(_ => { return; });
 }
 
 export async function startRound(challengeId: number, params: StartRoundParams): Promise<RoundExt> {
     return api.post(`/challenge/${challengeId}/startRound`, params, { withCredentials: true }).then(x => x.data);
 }
 
-export async function finishRound(challengeId: number): Promise<Round> {
+export async function finishRound(challengeId: number): Promise<RoundExt> {
     return api.get(`/challenge/${challengeId}/finishRound`, { withCredentials: true }).then(x => x.data);
 }
 

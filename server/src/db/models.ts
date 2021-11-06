@@ -616,6 +616,13 @@ export class Round extends Relation implements api.Round {
             VALUES (${this.id}, ${participantId}, ${titleId})`)
             .then(_ => new Roll(this.db, this.id, participantId, titleId, null));
     }
+
+    requireRoll(participantId: number): Promise<Roll> {
+        return this.db.one(sql`
+            SELECT ${Roll.COLS.join()} FROM roll
+            WHERE round_id = ${this.id} AND participant_id = ${participantId}`)
+            .then(x => Roll.fromRow(this.db, x));
+    }
 }
 
 export class Roll extends Relation implements api.Roll {

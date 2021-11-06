@@ -2,7 +2,7 @@ import { useParams } from "react-router";
 import { TypedUseSelectorHook, useDispatch as useReduxDispatch, useSelector as useReduxSelector } from 'react-redux';
 import { store } from "./store";
 import { ChallengeState } from "./stateSlice";
-import { ParticipantExt, Pool, Round, User } from "../../common/api/models";
+import { ParticipantExt, Pool, RoundExt, User } from "../../common/api/models";
 
 interface Params {
     challengeId: string
@@ -40,6 +40,11 @@ export function useParticipants(): ParticipantExt[] {
     return useChallenge()?.participants ?? [];
 }
 
-export function useRounds(): Round[] {
+export function useRounds(): RoundExt[] {
     return useChallenge()?.rounds ?? [];
+}
+
+export function useLastRound(): RoundExt | undefined {
+    const r = useRounds();
+    return r.length === 0 ? undefined : r[r.length - 1];
 }

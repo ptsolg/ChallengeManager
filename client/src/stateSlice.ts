@@ -1,10 +1,10 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { ClientChallenge, CreatePoolParams, ExtendRoundParams, Message, ParticipantExt, Pool, Round, StartRoundParams, User } from '../../common/api/models';
+import { ClientChallenge, CreatePoolParams, ExtendRoundParams, Message, ParticipantExt, Pool, RateTitleParams, Round, RoundExt, StartRoundParams, User } from '../../common/api/models';
 import * as api from './api';
 
 export interface ChallengeState extends ClientChallenge {
     pools: Pool[];
-    rounds: Round[];
+    rounds: RoundExt[];
     participants: ParticipantExt[];
     errors: { message: string, show: boolean }[];
 }
@@ -78,6 +78,13 @@ export const fetchRounds = createAsyncThunk(
 export const fetchParticipants = createAsyncThunk(
     'state/fetchParticipants',
     (cid: number) => api.fetchParticipants(cid)
+);
+
+export const rateTitle = createAsyncThunk(
+    'state/rateTitle',
+    ({ challengeId, params }: { challengeId: number, params: RateTitleParams }) => {
+        return api.rateTitle(challengeId, params).then(_ => params.score);
+    }
 );
 
 function initialChallengeState(cid: number): ChallengeState {
@@ -165,25 +172,33 @@ const stateSlice = createSlice({
                 show: true
             });
         },
-        [startRound.fulfilled.type]: (state, action: PayloadAction<Round>) => {
+        [startRound.fulfilled.type]: (state, action: PayloadAction<RoundExt>) => {
             getChallenge(state).rounds.push(action.payload);
         },
         [finishRound.fulfilled.type]: (state, action: PayloadAction<Round>) => {
             const c = getChallenge(state);
-            c.rounds[c.rounds.length - 1] = action.payload;
+            const r = c.rounds[c.rounds.length - 1];
+            c.rounds[c.rounds.length - 1] = { ...r, ...action.payload };
         },
         [extendRound.fulfilled.type]: (state, action: PayloadAction<Round>) => {
             const c = getChallenge(state);
-            c.rounds[c.rounds.length - 1] = action.payload;
+            const r = c.rounds[c.rounds.length - 1];
+            c.rounds[c.rounds.length - 1] = { ...r, ...action.payload };
         },
         [fetchPools.fulfilled.type]: (state, action: PayloadAction<Pool[]>) => {
             getChallenge(state).pools = action.payload;
         },
-        [fetchRounds.fulfilled.type]: (state, action: PayloadAction<Round[]>) => {
+        [fetchRounds.fulfilled.type]: (state, action: PayloadAction<RoundExt[]>) => {
             getChallenge(state).rounds = action.payload;
         },
         [fetchParticipants.fulfilled.type]: (state, action: PayloadAction<ParticipantExt[]>) => {
             getChallenge(state).participants = action.payload;
+        },
+        [rateTitle.fulfilled.type]: (state, action: PayloadAction<number>) => {
+            const c = getChallenge(state);
+            const roll = c.rounds[c.rounds.length - 1].rolls.find(x => x.watcher.id === state.user?.id);
+            if (roll !== undefined)
+                roll.score = action.payload;
         }
     }
 });
