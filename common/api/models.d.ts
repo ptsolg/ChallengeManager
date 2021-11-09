@@ -121,3 +121,21 @@ export interface KarmaHistory {
 export interface RateTitleParams {
     score: number;
 }
+
+export interface UserCount {
+    userId: number;
+    userName: string;
+    count: number;
+}
+
+export interface UserStats {
+    user: User;
+    numChallenges: number;
+    numCompleted: number;
+    avgRate: number | null;
+    avgTitleScore: number | null;
+    mostWatched: UserCount[];
+    mostSniped: UserCount[];
+    karma: number | null;
+    awards: string[];
+}

@@ -712,4 +712,125 @@ export class KarmaHistory extends Relation implements api.KarmaHistory {
             nonNull(row, 'karma'),
             nonNull(row, 'time'));
     }
+
+    static fetchLastValue(db: CommonQueryMethodsType, userId: number): Promise<number | null> {
+        return db.maybeOneFirst<number>(sql`
+            SELECT karma FROM karma_history WHERE user_id = ${userId}
+            ORDER BY "time" DESC
+            LIMIT 1`);
+    }
+}
+
+export class UserStats implements api.UserStats {
+    user: User;
+    numChallenges: number;
+    numCompleted: number;
+    avgRate: number | null;
+    avgTitleScore: number | null;
+    mostWatched: api.UserCount[];
+    mostSniped: api.UserCount[];
+    karma: number | null;
+    awards: string[];
+
+    constructor(
+        user: User,
+        numChallenges: number,
+        numCompleted: number,
+        avgRate: number | null,
+        avgTitleScore: number | null,
+        mostWatched: api.UserCount[],
+        mostSniped: api.UserCount[],
+        karma: number | null,
+        awards: string[],
+    ) {
+        this.user = user;
+        this.numChallenges = numChallenges;
+        this.numCompleted = numCompleted;
+        this.avgRate = avgRate;
+        this.avgTitleScore = avgTitleScore;
+        this.mostWatched = mostWatched;
+        this.mostSniped = mostSniped;
+        this.karma = karma;
+        this.awards = awards;
+    }
+
+    static async fetch(db: CommonQueryMethodsType, userId: number): Promise<UserStats> {
+        const user = await User.require(db, userId);
+
+        const challengeStats = await db.one<{ numChallenges: number, numCompleted: number }>(sql`
+            SELECT
+                CAST(COUNT(*) AS INTEGER) AS "numChallenges",
+                CAST(
+                    COALESCE(SUM(CASE WHEN P.failed_round_id IS NULL AND C.finish_time is NOT NULL THEN 1 ELSE 0 END), 0)
+                    AS INTEGER
+                ) AS "numCompleted"
+            FROM challenge C
+            JOIN participant P ON P.challenge_id = C.id
+            WHERE P.user_id = ${userId}`);
+
+        const avgRate = await db.maybeOneFirst<number>(sql`
+            SELECT AVG(R.score) FROM roll R
+            JOIN participant P ON P.id = R.participant_id
+            WHERE P.user_id = ${userId} AND R.score IS NOT NULL`);
+
+        const avgTitleScore = await db.maybeOneFirst<number>(sql`
+            SELECT AVG(R.score) FROM roll R
+            JOIN title T ON T.id = R.title_id
+            JOIN participant P ON P.id = T.participant_id
+            WHERE P.user_id = ${userId} AND R.score IS NOT NULL`);
+
+        const mostWatched = await db.any<api.UserCount>(sql`
+            SELECT
+                U.id AS "userId",
+                U.name AS "userName",
+                CAST(COUNT(U.id) AS INTEGER) AS count
+            FROM roll R
+            JOIN participant P1 ON P1.id = R.participant_id
+            JOIN title T ON T.id = R.title_id
+            JOIN participant P2 ON P2.id = T.participant_id
+            JOIN "user" U ON U.id = P2.user_id
+            WHERE P1.user_id = ${userId}
+            GROUP BY U.id
+            ORDER BY count DESC LIMIT 6`);
+
+        const mostSniped = await db.any<api.UserCount>(sql`
+            SELECT
+                U.id AS "userId",
+                U.name AS "userName",
+                CAST(COUNT(U.id) AS INTEGER) AS count
+            FROM roll R
+            JOIN participant P1 ON P1.id = R.participant_id
+            JOIN "user" U ON U.id = P1.user_id
+            JOIN title T ON T.id = R.title_id
+            JOIN participant P2 ON P2.id = T.participant_id
+            WHERE P2.user_id = ${userId}
+            GROUP BY U.id
+            ORDER BY count DESC LIMIT 6`);
+
+        const awards = await db.anyFirst<string>(sql`
+            SELECT awards.url FROM (
+                SELECT C.award_url url, C.finish_time "time" FROM challenge C
+                JOIN participant P1 ON P1.challenge_id = C.id
+                WHERE P1.user_id = ${userId}
+                    AND P1.failed_round_id IS NULL AND C.award_url IS NOT NULL
+                UNION
+                SELECT A.url url, A.time "time" from award A
+				JOIN participant P2 ON P2.id = A.participant_id
+                JOIN "user" U ON U.id = P2.user_id
+                WHERE P2.user_id = ${userId}
+            ) AS awards
+            ORDER BY awards.time`);
+
+        return new UserStats(
+            user,
+            challengeStats.numChallenges,
+            challengeStats.numCompleted,
+            avgRate,
+            avgTitleScore,
+            [...mostWatched],
+            [...mostSniped],
+            await KarmaHistory.fetchLastValue(db, userId),
+            [...awards]
+        );
+    }
 }

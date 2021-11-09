@@ -11,6 +11,7 @@ import PoolsPage from './pages/PoolsPage';
 import RoundsPage from './pages/RoundsPage';
 import { fetchCurrentUser, login } from './stateSlice';
 import { useDispatch } from './hooks';
+import ProfilePage from './pages/ProfilePage';
 
 export default function App(): JSX.Element {
     const dispatch = useDispatch();
@@ -44,6 +45,9 @@ export default function App(): JSX.Element {
                 </Route>
                 <Route path="/edit-challenge/:challengeId(\d+)">
                     <EditChallengePage />
+                </Route>
+                <Route path="/profile/:profileId(\d+)">
+                    <ProfilePage />
                 </Route>
                 <Route path="/">
                     <IndexPage />

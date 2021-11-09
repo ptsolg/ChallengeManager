@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getChallenges, getChallenge, getParticipants, getPools, getRounds, newChallenge, joinChallenge, getClientChallenge, leaveChallenge, editChallenge, getPoolTitles, newPool, newTitle, startRound, finishRound, extendRound, rateTitle } from './controllers/challenge';
 import { handleLogin, handleLogout } from './controllers/auth';
-import { getLoggedInUser, getUser } from './controllers/user';
+import { getLoggedInUser, getUser, getUserStats } from './controllers/user';
 import { checkCanAddTitle, checkCanManageChallenge, checkLoggedIn } from './middleware';
 import { db } from './db/db';
 import { DatabaseTransactionConnectionType } from 'slonik';
@@ -36,6 +36,7 @@ export default Router()
     .post('/challenge', checkLoggedIn, newChallenge)
     .use('/challenge/:challengeId(\\d+)', challengeRouter)
     .get('/user/me', checkLoggedIn, getLoggedInUser)
-    .get('/user/:userId(\\d+)', getUser)
+    .get('/user/:userId(\\d+)/', getUser)
+    .get('/user/:userId(\\d+)/stats', getUserStats)
     .post('/auth/login', handleLogin)
     .post('/auth/logout', handleLogout);

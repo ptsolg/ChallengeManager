@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Challenge, ClientChallenge, CreateChallengeParams, CreatePoolParams, CreateTitleParams, ExtendRoundParams, ParticipantExt, Pool, RateTitleParams, Round, RoundExt, StartRoundParams, TitleExt } from '../../common/api/models';
+import { Challenge, ClientChallenge, CreateChallengeParams, CreatePoolParams, CreateTitleParams, ExtendRoundParams, ParticipantExt, Pool, RateTitleParams, Round, RoundExt, StartRoundParams, TitleExt, UserStats } from '../../common/api/models';
 import { User } from '../../common/api/models';
 
 const api = axios.create({
@@ -93,4 +93,8 @@ export async function logout(): Promise<void> {
 export async function fetchCurrentUser(): Promise<User | undefined> {
     return api.get('/user/me', { withCredentials: true })
         .then(x => x.data).catch(_ => undefined);
+}
+
+export async function fetchUserStats(userId: number): Promise<UserStats> {
+    return api.get(`/user/${userId}/stats`).then(x => x.data);
 }

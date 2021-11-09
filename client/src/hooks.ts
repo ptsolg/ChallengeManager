@@ -4,12 +4,12 @@ import { store } from "./store";
 import { ChallengeState } from "./stateSlice";
 import { ParticipantExt, Pool, RoundExt, User } from "../../common/api/models";
 
-interface Params {
-    challengeId: string
+export function useChallengeId(): number {
+    return parseInt(useParams<{ challengeId: string }>().challengeId);
 }
 
-export function useChallengeId(): number {
-    return parseInt(useParams<Params>().challengeId);
+export function useProfileId(): number {
+    return parseInt(useParams<{ profileId: string }>().profileId);
 }
 
 type RootState = ReturnType<typeof store.getState>;
