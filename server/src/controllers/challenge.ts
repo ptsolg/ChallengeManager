@@ -86,6 +86,7 @@ export async function getClientChallenge(req: Request, res: JsonResponse<api.Cli
         canJoin: token !== undefined && (await checkCanJoinChallenge(c, token.id)) === undefined,
         isParticipant: token !== undefined && await c.hasParticipant(token.id),
         isCreator: token !== undefined && token.id === c.creatorId,
+        hasStarted: await c.hasStarted()
     });
 }
 
@@ -144,20 +145,24 @@ function getTitleParams(req: Request): api.CreateTitleParams {
     };
 }
 
+// todo: isHidden, score, duration, etc...
 export async function newTitle(
     req: LoggedInUserRequest,
     res: JsonResponse<api.TitleExt>
 ): Promise<Response> {
     const params = getTitleParams(req);
     const c = await Challenge.require(db, getCid(req));
-    const p = await c.requirePool(getPoolName(req));
     Error.throwIf(await c.hasTitle(params.name), 400, `Title "${params.name}" already exists"`);
-    // todo: isHidden, score, duration, etc...
+    const p = await c.requirePool(getPoolName(req));
+    const isOwner = getUid(req) === c.creatorId;
+    Error.throwIf(await c.hasStarted() && !isOwner, 400, 'Challenge has started');
+
     let proposer = getUid(req);
     if (params.userId !== null) {
-        Error.throwIf(getUid(req) !== c.creatorId, 400, "You don't have permissions to do that");
+        Error.throwIf(!isOwner, 400, "You don't have permissions to do that");
         proposer = params.userId;
     }
+
     const participant = await c.requireParticipant(proposer);
     const t = await p.addTitle(participant.id, params.name, params.url,
         params.isHidden, null, null, null, null);

@@ -114,6 +114,7 @@ function initialChallengeState(cid: number): ChallengeState {
         canJoin: false,
         isParticipant: false,
         isCreator: false,
+        hasStarted: false,
         pools: [],
         rounds: [],
         participants: [],
@@ -187,7 +188,9 @@ const stateSlice = createSlice({
             });
         },
         [startRound.fulfilled.type]: (state, action: PayloadAction<RoundExt>) => {
-            getChallenge(state).rounds.push(action.payload);
+            const c = getChallenge(state);
+            c.rounds.push(action.payload);
+            c.hasStarted = true;
         },
         [finishRound.fulfilled.type]: (state, action: PayloadAction<Round>) => {
             const c = getChallenge(state);

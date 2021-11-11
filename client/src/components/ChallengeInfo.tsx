@@ -2,40 +2,38 @@ import React from 'react';
 import { Card, Row, Col, Button } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
 import { formatDate } from '../date';
-import { useDispatch, useChallenge, useUser, useChallengeId } from '../hooks';
+import { useDispatch, useChallenge, useChallengeId } from '../hooks';
 import { leave, join } from '../stateSlice';
 
 export default function ChallengeInfo(): JSX.Element {
     const cid = useChallengeId();
     const challenge = useChallenge();
-    const user = useUser();
     const dispatch = useDispatch();
 
     if (challenge === undefined)
         return <></>;
-
     return (
         <Card>
             <Card.Body>
                 <p className="mb-3 text-center"><strong>{challenge.name}</strong></p>
                 <Row className="mb-2">
                     <Col lg="4"><dt>Start time</dt></Col>
-                    <Col lg="8"><dd>{formatDate(challenge?.startTime)}</dd></Col>
+                    <Col lg="8"><dd>{formatDate(challenge.startTime)}</dd></Col>
                 </Row>
                 <Row className="mb-2">
                     <Col lg="4"><dt>Finish time</dt></Col>
-                    <Col lg="8"><dd>{formatDate(challenge?.finishTime)}</dd></Col>
+                    <Col lg="8"><dd>{formatDate(challenge.finishTime)}</dd></Col>
                 </Row>
                 <Row className="mb-2">
                     <Col lg="4"><dt>Allow hidden</dt></Col>
-                    <Col lg="8"><dd>{challenge?.allowHidden ? 'Allow' : 'Disallow'}</dd></Col>
+                    <Col lg="8"><dd>{challenge.allowHidden ? 'Allow' : 'Disallow'}</dd></Col>
                 </Row>
                 <Row className="mb-2">
                     <Col lg="4"><dt>Award</dt></Col>
                     <Col lg="8">
                         <dd>
                             <div className="ms-auto me-auto" style={{ width: "48px" }}>
-                                <img className="img-fluid" src={challenge?.awardUrl ?? ''}></img>
+                                <img className="img-fluid" src={challenge.awardUrl ?? ''}></img>
                             </div>
                         </dd>
                     </Col>
@@ -44,7 +42,7 @@ export default function ChallengeInfo(): JSX.Element {
                     <Col sm="4"></Col>
                     <Col sm="4">
                         {
-                            user !== undefined && user.id == challenge.creatorId && challenge.finishTime === null
+                            challenge.isCreator && challenge.finishTime === null
                                 ?
                                 <LinkContainer to={`/edit-challenge/${challenge.id}`}>
                                     <Button className="w-100">Edit</Button>

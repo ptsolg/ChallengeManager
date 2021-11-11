@@ -32,7 +32,9 @@ export default function AddTitle({ onAdd }: AddTitleProps): JSX.Element {
             setPoolName(pools[0].name);
     }, [pools]);
 
-    if (!challenge || !challenge.isParticipant)
+    if (!challenge
+        || !challenge.isParticipant
+        || challenge.hasStarted && !challenge.isCreator)
         return (<></>);
     return (
         <Card>

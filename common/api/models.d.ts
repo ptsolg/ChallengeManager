@@ -27,6 +27,7 @@ export interface ClientChallenge extends Challenge {
     canJoin: boolean;
     isParticipant: boolean;
     isCreator: boolean;
+    hasStarted: boolean; // 'true' if number of rounds > 0
 }
 
 export interface Participant {
