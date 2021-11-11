@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Challenge, ClientChallenge, CreateChallengeParams, CreatePoolParams, CreateTitleParams, ExtendRoundParams, ParticipantExt, Pool, RateTitleParams, Round, RoundExt, StartRoundParams, TitleExt, UserStats } from '../../common/api/models';
+import { Challenge, ClientChallenge, CreateChallengeParams, CreatePoolParams, CreateTitleParams, ExtendRoundParams, IdList, ParticipantExt, Pool, RateTitleParams, Round, RoundExt, StartRoundParams, TitleExt, UserStats } from '../../common/api/models';
 import { User } from '../../common/api/models';
 
 const api = axios.create({
@@ -78,6 +78,14 @@ export async function finishRound(challengeId: number): Promise<RoundExt> {
 
 export async function extendRound(challengeId: number, params: ExtendRoundParams): Promise<Round> {
     return api.post(`/challenge/${challengeId}/extendRound`, params, { withCredentials: true }).then(x => x.data);
+}
+
+export async function swapTitles(challengeId: number, userIds: IdList): Promise<RoundExt> {
+    return api.post(`/challenge/${challengeId}/swap`, userIds, { withCredentials: true }).then(x => x.data);
+}
+
+export async function randomSwapTitles(challengeId: number, userIds: IdList): Promise<RoundExt> {
+    return api.post(`/challenge/${challengeId}/randomSwap`, userIds, { withCredentials: true }).then(x => x.data);
 }
 
 export async function login(authorizationCode: string): Promise<User> {

@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { ClientChallenge, CreatePoolParams, ExtendRoundParams, Message, ParticipantExt, Pool, RateTitleParams, Round, RoundExt, StartRoundParams, User } from '../../common/api/models';
+import { ClientChallenge, CreatePoolParams, ExtendRoundParams, IdList, Message, ParticipantExt, Pool, RateTitleParams, Round, RoundExt, StartRoundParams, User } from '../../common/api/models';
 import * as api from './api';
 
 export interface ChallengeState extends ClientChallenge {
@@ -84,6 +84,20 @@ export const rateTitle = createAsyncThunk(
     'state/rateTitle',
     ({ challengeId, params }: { challengeId: number, params: RateTitleParams }) => {
         return api.rateTitle(challengeId, params).then(_ => params.score);
+    }
+);
+
+export const swapTitles = createAsyncThunk(
+    'state/swapTitles',
+    ({ challengeId, userIds }: { challengeId: number, userIds: IdList }) => {
+        return api.swapTitles(challengeId, userIds);
+    }
+);
+
+export const randomSwapTitles = createAsyncThunk(
+    'state/randomSwapTitles',
+    ({ challengeId, userIds }: { challengeId: number, userIds: IdList }) => {
+        return api.randomSwapTitles(challengeId, userIds);
     }
 );
 
@@ -199,7 +213,15 @@ const stateSlice = createSlice({
             const roll = c.rounds[c.rounds.length - 1].rolls.find(x => x.watcher.id === state.user?.id);
             if (roll !== undefined)
                 roll.score = action.payload;
-        }
+        },
+        [swapTitles.fulfilled.type]: (state, action: PayloadAction<RoundExt>) => {
+            const c = getChallenge(state);
+            c.rounds[action.payload.num] = action.payload;
+        },
+        [randomSwapTitles.fulfilled.type]: (state, action: PayloadAction<RoundExt>) => {
+            const c = getChallenge(state);
+            c.rounds[action.payload.num] = action.payload;
+        },
     }
 });
 

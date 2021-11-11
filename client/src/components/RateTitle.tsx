@@ -4,7 +4,11 @@ import { useChallengeId, useDispatch, useLastRound, useParticipants, useUser } f
 import { rateTitle } from '../stateSlice';
 import NumericControl from './NumericControl';
 
-export default function RateTitle(): JSX.Element {
+interface RateTitleProps {
+    className?: string;
+}
+
+export default function RateTitle({ className }: RateTitleProps): JSX.Element {
     const cid = useChallengeId();
     const user = useUser();
     const participant = useParticipants().find(x => x.userId === user?.id);
@@ -13,7 +17,6 @@ export default function RateTitle(): JSX.Element {
     const [score, setScore] = useState<number>();
 
     function rate() {
-        console.log('aBOBA', score);
         if (score !== undefined) {
             dispatch(rateTitle({
                 challengeId: cid, params: {
@@ -28,7 +31,7 @@ export default function RateTitle(): JSX.Element {
         return (<></>);
 
     return (
-        <Card>
+        <Card className={className}>
             <Card.Body>
                 <Row>
                     <Form.Label>Score</Form.Label>

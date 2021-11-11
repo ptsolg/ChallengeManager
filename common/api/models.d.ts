@@ -139,3 +139,7 @@ export interface UserStats {
     karma: number | null;
     awards: string[];
 }
+
+export interface IdList {
+    ids: number[];
+}

@@ -260,3 +260,57 @@ export async function rateTitle(req: LoggedInUserRequest, res: JsonResponse<Mess
     await r.update();
     return res.json(Message.ok());
 }
+
+function getIdList(req: Request): api.IdList {
+    return {
+        ids: nonNull(req, 'ids')
+    };
+}
+
+async function swap(
+    transaction: DatabaseTransactionConnectionType,
+    req: LoggedInUserRequest,
+    res: JsonResponse<api.RoundExt>,
+    user1: number,
+    user2: number,
+): Promise<Response> {
+    Error.throwIf(user1 === user2, 400, 'Cannot swap titles between the same user');
+    const c = await Challenge.require(transaction, getCid(req));
+    const lr = await c.requireLastRound();
+    Error.throwIf(lr.isFinished, 400, 'Round has ended');
+    const p1 = await c.requireParticipant(user1);
+    const p2 = await c.requireParticipant(user2);
+    const r1 = await lr.requireRoll(p1.id);
+    const r2 = await lr.requireRoll(p2.id);
+    const tmp = r1.titleId;
+    r1.titleId = r2.titleId;
+    r2.titleId = tmp;
+    await r1.update();
+    await r2.update();
+    return res.json({
+        ...lr,
+        rolls: await c.fetchRolls(lr.num)
+    });
+}
+
+export function swapTitles(
+    transaction: DatabaseTransactionConnectionType,
+    req: LoggedInUserRequest,
+    res: JsonResponse<api.RoundExt>
+): Promise<Response> {
+    const list = getIdList(req);
+    Error.throwIf(list.ids.length !== 2, 400, 'Can only swap titles between 2 users');
+    return swap(transaction, req, res, list.ids[0], list.ids[1]);
+}
+
+export function randomSwapTitles(
+    transaction: DatabaseTransactionConnectionType,
+    req: LoggedInUserRequest,
+    res: JsonResponse<api.RoundExt>
+): Promise<Response> {
+    const list = getIdList(req);
+    Error.throwIf(list.ids.length < 2, 400, 'Not enough users');
+    const candidates = list.ids.slice(1);
+    const user2 = candidates[Math.floor(Math.random() * candidates.length)];
+    return swap(transaction, req, res, list.ids[0], user2);
+}
