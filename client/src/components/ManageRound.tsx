@@ -43,7 +43,7 @@ export default function ManageRound(props: ManageRoundProps): JSX.Element {
             dispatch(finishRound(challenge.id));
     }
 
-    if (challenge === undefined || !challenge.isCreator)
+    if (challenge === undefined || !challenge.isCreator || challenge.finishTime !== null)
         return <></>;
     if (challenge.rounds.length === 0 || challenge.rounds[challenge.rounds.length - 1].isFinished)
         return (

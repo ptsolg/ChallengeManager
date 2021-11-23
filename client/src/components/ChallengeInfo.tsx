@@ -1,9 +1,9 @@
 import React from 'react';
-import { Card, Row, Col, Button } from 'react-bootstrap';
+import { Card, Row, Col, Button, ButtonGroup } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
 import { formatDate } from '../date';
 import { useDispatch, useChallenge, useChallengeId } from '../hooks';
-import { leave, join } from '../stateSlice';
+import { leave, join, finishChallenge } from '../stateSlice';
 
 export default function ChallengeInfo(): JSX.Element {
     const cid = useChallengeId();
@@ -39,31 +39,32 @@ export default function ChallengeInfo(): JSX.Element {
                     </Col>
                 </Row>
                 <Row>
-                    <Col sm="4"></Col>
-                    <Col sm="4">
+                    <ButtonGroup>
                         {
                             challenge.isCreator && challenge.finishTime === null
                                 ?
-                                <LinkContainer to={`/edit-challenge/${challenge.id}`}>
-                                    <Button className="w-100">Edit</Button>
-                                </LinkContainer>
+                                <>
+                                    <LinkContainer to={`/edit-challenge/${challenge.id}`}>
+                                        <Button className="text-center">Edit</Button>
+                                    </LinkContainer>
+                                    <Button onClick={() => dispatch(finishChallenge(cid))}>End Challenge</Button>
+                                </>
                                 :
                                 null
                         }
-                    </Col>
-                    <Col sm="4">
                         {
                             challenge.isParticipant
                                 ?
-                                <Button onClick={() => dispatch(leave(cid))} variant="danger" className="w-100">Leave</Button>
+                                challenge.finishTime != null
+                                    ? <></>
+                                    : <Button onClick={() => dispatch(leave(cid))} variant="danger">Leave</Button>
                                 :
                                 <Button
                                     onClick={() => dispatch(join(cid))}
                                     variant={challenge.canJoin ? 'success' : 'secondary'}
-                                    className="w-100"
                                     disabled={!challenge.canJoin}>Join</Button>
                         }
-                    </Col>
+                    </ButtonGroup>
                 </Row>
             </Card.Body>
         </Card>

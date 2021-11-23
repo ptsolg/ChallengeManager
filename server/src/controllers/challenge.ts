@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { DatabaseTransactionConnectionType } from 'slonik';
 import * as api from '../../../common/api/models';
 import { db } from '../db/db';
-import { Challenge, Participant, Title, User } from '../db/models';
+import { Challenge, Participant, Round, Title, User } from '../db/models';
 import { verifyToken } from '../utils/auth';
 import { Error } from '../utils/error';
 import { getCid, getPoolName, getUid, LoggedInUserRequest, maybeNull, nonNull } from '../utils/request';
@@ -33,6 +33,7 @@ function getChallengeParams(req: Request): api.CreateChallengeParams {
 
 export async function editChallenge(req: Request, res: JsonResponse<Challenge>): Promise<Response> {
     const c = await Challenge.require(db, getCid(req));
+    Error.throwIf(c.finishTime !== null, 400, 'Challenge has ended');
     const params = getChallengeParams(req);
     c.name = params.name;
     c.awardUrl = params.awardUrl;
@@ -66,7 +67,7 @@ export function newChallenge(req: LoggedInUserRequest, res: JsonResponse<api.Cha
 }
 
 async function checkCanJoinChallenge(c: Challenge, uid: number): Promise<string | undefined> {
-    if (c.finishTime && Date.now() > Date.parse(c.finishTime))
+    if (c.finishTime !== null)
         return 'Challenge has ended';
     if (await c.hasStarted())
         return 'Challenge has already started';
@@ -78,16 +79,20 @@ async function checkCanJoinChallenge(c: Challenge, uid: number): Promise<string 
         : 'User has failed this challenge';
 }
 
-export async function getClientChallenge(req: Request, res: JsonResponse<api.ClientChallenge>): Promise<Response> {
+async function _getClientChallenge(req: Request, c: Challenge): Promise<api.ClientChallenge> {
     const token = verifyToken(req);
-    const c = await Challenge.require(db, getCid(req));
-    return res.json({
+    return {
         ...c,
         canJoin: token !== undefined && (await checkCanJoinChallenge(c, token.id)) === undefined,
         isParticipant: token !== undefined && await c.hasParticipant(token.id),
         isCreator: token !== undefined && token.id === c.creatorId,
         hasStarted: await c.hasStarted()
-    });
+    };
+}
+
+export async function getClientChallenge(req: Request, res: JsonResponse<api.ClientChallenge>): Promise<Response> {
+    const c = await Challenge.require(db, getCid(req));
+    return res.json(await _getClientChallenge(req, c));
 }
 
 export async function joinChallenge(req: LoggedInUserRequest, res: JsonResponse<Message>): Promise<Response> {
@@ -104,6 +109,7 @@ export async function leaveChallenge(
     res: JsonResponse<Message>
 ): Promise<Response> {
     const c = await Challenge.require(transaction, getCid(req));
+    Error.throwIf(c.finishTime !== null, 400, 'Challenge has ended');
     const uid = getUid(req);
     if (await c.hasStarted()) {
         const lastRound = await c.requireLastRound();
@@ -132,6 +138,7 @@ function getPoolParams(req: Request): api.CreatePoolParams {
 export async function newPool(req: Request, res: JsonResponse<api.Pool>): Promise<Response> {
     const params = getPoolParams(req);
     const c = await Challenge.require(db, getCid(req));
+    Error.throwIf(c.finishTime !== null, 400, 'Challenge has ended');
     Error.throwIf(await c.hasPool(params.name), 400, `Pool "${params.name}" already exists`);
     return res.json(await c.addPool(params.name));
 }
@@ -152,6 +159,7 @@ export async function newTitle(
 ): Promise<Response> {
     const params = getTitleParams(req);
     const c = await Challenge.require(db, getCid(req));
+    Error.throwIf(c.finishTime !== null, 400, 'Challenge has ended');
     Error.throwIf(await c.hasTitle(params.name), 400, `Title "${params.name}" already exists"`);
     const p = await c.requirePool(getPoolName(req));
     const isOwner = getUid(req) === c.creatorId;
@@ -186,6 +194,7 @@ export async function startRound(
 ): Promise<Response> {
     const params = getStartRoundParams(req);
     const c = await Challenge.require(transaction, getCid(req));
+    Error.throwIf(c.finishTime !== null, 400, 'Challenge has ended');
     const lastRound = await c.fetchLastRound();
     Error.throwIf(lastRound !== undefined && !lastRound.isFinished, 400, `Finish round ${lastRound?.num} first`);
     const pool = await c.requirePool(params.poolName);
@@ -214,20 +223,30 @@ export async function startRound(
     return res.json({ ...round, rolls: rolls });
 }
 
+async function _finishRound(
+    transaction: DatabaseTransactionConnectionType,
+    c: Challenge,
+    r: Round
+) {
+    Error.throwIf(r.isFinished, 400, 'Round has already been finished');
+    const rolls = await c.fetchRolls(r.num);
+    const failedParticipants = rolls.filter(r => r.score === null).map(r => r.participantId);
+    if (failedParticipants.length > 0)
+        await Participant.fail(transaction, r.id, failedParticipants);
+    r.isFinished = true;
+    await r.update();
+    // todo: karma
+}
+
 export async function finishRound(
     transaction: DatabaseTransactionConnectionType,
     req: Request,
     res: JsonResponse<api.Round>
 ): Promise<Response> {
     const c = await Challenge.require(transaction, getCid(req));
+    Error.throwIf(c.finishTime !== null, 400, 'Challenge has ended');
     const lr = await c.requireLastRound();
-    Error.throwIf(lr.isFinished, 400, 'Round has already been finished');
-    const rolls = await c.fetchRolls(lr.num);
-    const failedParticipants = rolls.filter(r => r.score === null).map(r => r.participantId);
-    await Participant.fail(transaction, lr.id, failedParticipants);
-    lr.isFinished = true;
-    await lr.update();
-    // todo: karma
+    await _finishRound(transaction, c, lr);
     return res.json(lr);
 }
 
@@ -239,6 +258,7 @@ function getExtendRoundParams(req: Request): api.ExtendRoundParams {
 
 export async function extendRound(req: Request, res: JsonResponse<api.Round>): Promise<Response> {
     const c = await Challenge.require(db, getCid(req));
+    Error.throwIf(c.finishTime !== null, 400, 'Challenge has ended');
     const lr = await c.requireLastRound();
     const params = getExtendRoundParams(req);
     const finish = new Date(lr.finishTime);
@@ -257,6 +277,7 @@ function getRateTitleParams(req: Request): api.RateTitleParams {
 export async function rateTitle(req: LoggedInUserRequest, res: JsonResponse<Message>): Promise<Response> {
     const params = getRateTitleParams(req);
     const c = await Challenge.require(db, getCid(req));
+    Error.throwIf(c.finishTime !== null, 400, 'Challenge has ended');
     const lr = await c.requireLastRound();
     Error.throwIf(Date.parse(lr.finishTime) < Date.now(), 400, 'Round has ended');
     const p = await c.requireParticipant(getUid(req));
@@ -281,6 +302,7 @@ async function swap(
 ): Promise<Response> {
     Error.throwIf(user1 === user2, 400, 'Cannot swap titles between the same user');
     const c = await Challenge.require(transaction, getCid(req));
+    Error.throwIf(c.finishTime !== null, 400, 'Challenge has ended');
     const lr = await c.requireLastRound();
     Error.throwIf(lr.isFinished, 400, 'Round has ended');
     const p1 = await c.requireParticipant(user1);
@@ -318,4 +340,21 @@ export function randomSwapTitles(
     const candidates = list.ids.slice(1);
     const user2 = candidates[Math.floor(Math.random() * candidates.length)];
     return swap(transaction, req, res, list.ids[0], user2);
+}
+
+export async function finishChallenge(
+    transaction: DatabaseTransactionConnectionType,
+    req: LoggedInUserRequest,
+    res: JsonResponse<api.ClientChallenge>
+): Promise<Response> {
+    const c = await Challenge.require(db, getCid(req));
+    Error.throwIf(c.finishTime !== null, 400, 'Challenge has ended');
+    if (await c.hasStarted()) {
+        const lr = await c.requireLastRound();
+        if (!lr.isFinished)
+            await _finishRound(transaction, c, lr);
+    }
+    c.finishTime = new Date(Date.now()).toISOString();
+    await c.update();
+    return res.json(await _getClientChallenge(req, c));
 }

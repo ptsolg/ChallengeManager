@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Button } from 'react-bootstrap';
+import { Card, Button, ButtonGroup } from 'react-bootstrap';
 import { useChallenge, useDispatch } from '../hooks';
 import { randomSwapTitles, swapTitles } from '../stateSlice';
 
@@ -33,13 +33,15 @@ export default function SwapTitles({ selectedUsers }: SwapTitlesProps): JSX.Elem
         }
     }
 
-    if (!challenge?.isCreator)
+    if (!challenge?.isCreator || challenge.finishTime !== null)
         return (<></>);
     return (
-        <Card>
+        <Card className="mb-2">
             <Card.Body>
-                <Button className="me-2" onClick={swap} disabled={selectedUsers.size !== 2}>Swap Titles</Button>
-                <Button onClick={randomSwap} disabled={selectedUsers.size <= 2}>Random Swap</Button>
+                <ButtonGroup>
+                    <Button onClick={swap} disabled={selectedUsers.size !== 2}>Swap Titles</Button>
+                    <Button onClick={randomSwap} disabled={selectedUsers.size <= 2}>Random Swap</Button>
+                </ButtonGroup>
             </Card.Body>
         </Card>
     );

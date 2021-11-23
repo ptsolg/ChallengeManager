@@ -226,7 +226,8 @@ export class Challenge extends Relation implements api.Challenge {
     update(): Promise<void> {
         return this.db.query(sql`
             UPDATE challenge SET name = ${this.name}, award_url = ${this.awardUrl},
-                allow_hidden = ${this.allowHidden}, description = ${this.description}
+                allow_hidden = ${this.allowHidden}, description = ${this.description},
+                finish_time = ${this.finishTime}
             WHERE id = ${this.id}`).then(_ => { return; });
     }
 

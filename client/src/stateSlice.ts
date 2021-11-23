@@ -101,6 +101,11 @@ export const randomSwapTitles = createAsyncThunk(
     }
 );
 
+export const finishChallenge = createAsyncThunk(
+    'state/finishChallenge',
+    (cid: number) => api.finishChallenge(cid)
+);
+
 function initialChallengeState(cid: number): ChallengeState {
     return {
         id: cid,
@@ -225,6 +230,13 @@ const stateSlice = createSlice({
             const c = getChallenge(state);
             c.rounds[action.payload.num] = action.payload;
         },
+        [finishChallenge.fulfilled.type]: (state, action: PayloadAction<ClientChallenge>) => {
+            const c = getChallenge(state);
+            state.challenge[state.cid] = {
+                ...c,
+                ...action.payload
+            };
+        }
     }
 });
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Row, Col, Button, Form } from 'react-bootstrap';
-import { useChallengeId, useDispatch, useLastRound, useParticipants, useUser } from '../hooks';
+import { useChallenge, useChallengeId, useDispatch, useLastRound, useParticipants, useUser } from '../hooks';
 import { rateTitle } from '../stateSlice';
 import NumericControl from './NumericControl';
 
@@ -10,6 +10,7 @@ interface RateTitleProps {
 
 export default function RateTitle({ className }: RateTitleProps): JSX.Element {
     const cid = useChallengeId();
+    const challenge = useChallenge();
     const user = useUser();
     const participant = useParticipants().find(x => x.userId === user?.id);
     const round = useLastRound();
@@ -27,7 +28,7 @@ export default function RateTitle({ className }: RateTitleProps): JSX.Element {
     }
 
     const roll = round?.rolls.find(x => x.participantId === participant?.id);
-    if (user === undefined || round === undefined || roll === undefined)
+    if (user === undefined || round === undefined || roll === undefined || challenge?.finishTime !== null)
         return (<></>);
 
     return (

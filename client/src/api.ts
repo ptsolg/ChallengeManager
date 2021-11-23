@@ -88,6 +88,10 @@ export async function randomSwapTitles(challengeId: number, userIds: IdList): Pr
     return api.post(`/challenge/${challengeId}/randomSwap`, userIds, { withCredentials: true }).then(x => x.data);
 }
 
+export async function finishChallenge(challengeId: number): Promise<ClientChallenge> {
+    return api.get(`/challenge/${challengeId}/finish`, { withCredentials: true }).then(x => x.data);
+}
+
 export async function login(authorizationCode: string): Promise<User> {
     return api.post('/auth/login', { code: authorizationCode }, { withCredentials: true }).then(x => x.data);
 }
