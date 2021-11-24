@@ -1,0 +1,16 @@
+.icon-button {
+    font-size: 15pt;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    border-radius: 100%;
+}
+
+.icon-button, .icon-button:hover {
+    color: rgb(64, 64, 64);
+}
+
+.icon-button:hover {
+    background-color: rgba(64, 64, 64, 0.2);
+}
