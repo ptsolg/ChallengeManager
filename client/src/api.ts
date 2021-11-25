@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Challenge, ClientChallenge, CreateChallengeParams, CreatePoolParams, CreateTitleParams, ExtendRoundParams, IdList, ParticipantExt, Pool, RateTitleParams, Round, RoundExt, StartRoundParams, TitleExt, UserStats } from '../../common/api/models';
+import { Challenge, ClientChallenge, CreateChallengeParams, CreatePoolParams, CreateTitleParams, EditTitleParams, ExtendRoundParams, IdList, ParticipantExt, Pool, RateTitleParams, Round, RoundExt, StartRoundParams, TitleExt, UserStats } from '../../common/api/models';
 import { User } from '../../common/api/models';
 
 const api = axios.create({
@@ -62,6 +62,14 @@ export async function fetchTitles(challengeId: number, poolName: string): Promis
 
 export async function newTitle(challengeId: number, poolName: string, params: CreateTitleParams): Promise<TitleExt> {
     return api.post(`/challenge/${challengeId}/pools/${poolName}`, params, { withCredentials: true }).then(x => x.data);
+}
+
+export async function editTitle(challengeId: number, titleId: number, params: EditTitleParams): Promise<void> {
+    return api.put(`/challenge/${challengeId}/titles/${titleId}`, params, { withCredentials: true }).then(_ => { return; });
+}
+
+export async function deleteTitle(challengeId: number, titleId: number): Promise<void> {
+    return api.delete(`/challenge/${challengeId}/titles/${titleId}`, { withCredentials: true }).then(_ => { return; });
 }
 
 export async function rateTitle(challengeId: number, params: RateTitleParams): Promise<void> {

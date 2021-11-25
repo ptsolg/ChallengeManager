@@ -5,7 +5,7 @@ import { db } from '../db/db';
 import { Challenge, Participant, Round, Title, User } from '../db/models';
 import { verifyToken } from '../utils/auth';
 import { Error } from '../utils/error';
-import { getCid, getPoolName, getUid, LoggedInUserRequest, maybeNull, nonNull } from '../utils/request';
+import { getCid, getPoolName, getTitleId, getUid, LoggedInUserRequest, maybeNull, nonNull } from '../utils/request';
 import { JsonResponse, Message } from '../utils/response';
 
 export function getChallenges(req: Request, res: JsonResponse<api.Challenge[]>): Promise<Response> {
@@ -143,12 +143,18 @@ export async function newPool(req: Request, res: JsonResponse<api.Pool>): Promis
     return res.json(await c.addPool(params.name));
 }
 
-function getTitleParams(req: Request): api.CreateTitleParams {
+function getEditTitleParams(req: Request): api.EditTitleParams {
     return {
-        userId: maybeNull(req, 'userId'),
         name: nonNull(req, 'name'),
         url: maybeNull(req, 'url'),
         isHidden: nonNull(req, 'isHidden'),
+    };
+}
+
+function getCreateTitleParams(req: Request): api.CreateTitleParams {
+    return {
+        ...getEditTitleParams(req),
+        userId: maybeNull(req, 'userId'),
     };
 }
 
@@ -157,7 +163,7 @@ export async function newTitle(
     req: LoggedInUserRequest,
     res: JsonResponse<api.TitleExt>
 ): Promise<Response> {
-    const params = getTitleParams(req);
+    const params = getCreateTitleParams(req);
     const c = await Challenge.require(db, getCid(req));
     Error.throwIf(c.finishTime !== null, 400, 'Challenge has ended');
     Error.throwIf(await c.hasTitle(params.name), 400, `Title "${params.name}" already exists"`);
@@ -178,6 +184,27 @@ export async function newTitle(
         ...t,
         proposer: await User.require(db, proposer)
     });
+}
+
+export async function editTitle(
+    req: LoggedInUserRequest,
+    res: JsonResponse<api.Message>
+): Promise<Response> {
+    const params = getEditTitleParams(req);
+    const t = await Title.require(db, getTitleId(req));
+    t.name = params.name;
+    t.url = params.url;
+    t.isHidden = params.isHidden;
+    await t.update();
+    return res.json(Message.ok());
+}
+
+export async function deleteTitle(
+    req: LoggedInUserRequest,
+    res: JsonResponse<api.Message>
+): Promise<Response> {
+    await Title.delete(db, getTitleId(req));
+    return res.json(Message.ok());
 }
 
 function getStartRoundParams(req: Request): api.StartRoundParams {

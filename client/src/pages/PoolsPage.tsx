@@ -6,6 +6,7 @@ import AddPool from '../components/AddPool';
 import AddTitle from '../components/AddTitle';
 import DefaultLayout from '../components/layout/DefaultLayout';
 import PoolSelector from '../components/PoolSelector';
+import TitleRow from '../components/TitleRow';
 import { useChallengeId, useDispatch } from '../hooks';
 import { emitError, fetchChallenge, fetchPools } from '../stateSlice';
 
@@ -25,6 +26,16 @@ export default function PoolsPage(): JSX.Element {
     function selectPool(pool: Pool) {
         setPool(pool);
         fetchTitles(cid, pool.name).then(setTitles);
+    }
+
+    function setTitle(i: number, title: TitleExt) {
+        const newTitles = [...titles];
+        newTitles[i] = title;
+        setTitles(newTitles);
+    }
+
+    function deleteTitle(i: number) {
+        setTitles(titles.filter((_, j) => i !== j));
     }
 
     useEffect(() => {
@@ -53,19 +64,16 @@ export default function PoolsPage(): JSX.Element {
                                         <th>#</th>
                                         <th>Name</th>
                                         <th>Proposer</th>
-                                        <th>Duration</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {
-                                        titles.map((x, i) =>
-                                            <tr>
-                                                <td scope="row">{i}</td>
-                                                <td><a href={x.url ?? ''}>{x.name}</a></td>
-                                                <td>{x.proposer.name}</td>
-                                                <td>{x.duration}</td>
-                                            </tr>)
-                                    }
+                                    {titles.map((x, i) =>
+                                        <TitleRow
+                                            num={i}
+                                            title={x}
+                                            setTitle={(t) => setTitle(i, t)}
+                                            onDelete={() => deleteTitle(i)} />)}
                                 </tbody>
                             </Table>
                         </Card.Body>

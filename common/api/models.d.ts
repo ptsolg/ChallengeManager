@@ -51,14 +51,17 @@ export interface Pool extends CreatePoolParams {
     challengeId: number;
 }
 
-export interface CreateTitleParams {
-    userId: number | null;
+export interface EditTitleParams {
     name: string;
     url: string | null;
     isHidden: boolean;
 }
 
-export interface Title extends Omit<CreateTitleParams, 'userId'> {
+export interface CreateTitleParams extends EditTitleParams {
+    userId: number | null;
+}
+
+export interface Title extends EditTitleParams {
     id: number;
     poolId: number;
     participantId: number;

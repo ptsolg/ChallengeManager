@@ -552,6 +552,11 @@ export class Title extends Relation implements api.Title {
             maybeNull(row, p + 'num_of_episodes'));
     }
 
+    static require(db: CommonQueryMethodsType, titleId: number): Promise<Title> {
+        return db.one(sql`
+            SELECT ${Title.COLS.join()} FROM title WHERE id = ${titleId}`).then(x => Title.fromRow(db, x));
+    }
+
     update(): Promise<void> {
         return this.db.query(sql`
             UPDATE title SET pool_id = ${this.poolId}, participant_id = ${this.participantId},
@@ -561,8 +566,8 @@ export class Title extends Relation implements api.Title {
             WHERE id = ${this.id}`).then(_ => { return; });
     }
 
-    delete(): Promise<void> {
-        return this.db.query(sql`DELETE FROM title WHERE id = ${this.id}`).then(_ => { return; });
+    static delete(db: CommonQueryMethodsType, titleId: number): Promise<void> {
+        return db.query(sql`DELETE FROM title WHERE id = ${titleId}`).then(_ => { return; });
     }
 }
 

@@ -1,6 +1,6 @@
 import { NextFunction, Response } from 'express';
 import { db } from './db/db';
-import { Challenge } from './db/models';
+import { Challenge, Title } from './db/models';
 import { verifyToken } from './utils/auth';
 import { Error } from './utils/error';
 import { getCid, getUid, LoggedInUserRequest } from './utils/request';
@@ -30,7 +30,7 @@ export function checkCanManageChallenge(
     });
 }
 
-export function checkCanAddTitle(
+export function checkCanManageTitle(
     req: LoggedInUserRequest,
     res: Response,
     next: NextFunction
@@ -38,8 +38,17 @@ export function checkCanAddTitle(
     return checkLoggedIn(req, res, async () => {
         const c = await Challenge.require(db, getCid(req));
         Error.throwIf(await c.hasStarted(), 400, 'Challenge has already started');
-        Error.throwIf(!(await c.hasParticipant(getUid(req))),
+        const uid = getUid(req);
+        Error.throwIf(!(await c.hasParticipant(uid)),
             400, 'You are not participating in this challenge');
+
+        const tid = req.params['titleId'];
+        if (tid === undefined || uid === c.creatorId)
+            return next();
+        const title = await Title.require(db, parseInt(tid));
+        const participant = await c.requireParticipant(uid);
+        Error.throwIf(title.participantId !== participant.id,
+            400, "You don't have permissions to edit this title");
         return next();
     });
 }

@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { getChallenges, getChallenge, getParticipants, getPools, getRounds, newChallenge, joinChallenge, getClientChallenge, leaveChallenge, editChallenge, getPoolTitles, newPool, newTitle, startRound, finishRound, extendRound, rateTitle, swapTitles, randomSwapTitles, finishChallenge } from './controllers/challenge';
+import { getChallenges, getChallenge, getParticipants, getPools, getRounds, newChallenge, joinChallenge, getClientChallenge, leaveChallenge, editChallenge, getPoolTitles, newPool, newTitle, startRound, finishRound, extendRound, rateTitle, swapTitles, randomSwapTitles, finishChallenge, editTitle, deleteTitle } from './controllers/challenge';
 import { handleLogin, handleLogout } from './controllers/auth';
 import { getLoggedInUser, getUser, getUserStats } from './controllers/user';
-import { checkCanAddTitle, checkCanManageChallenge, checkLoggedIn } from './middleware';
+import { checkCanManageTitle, checkCanManageChallenge, checkLoggedIn } from './middleware';
 import { db } from './db/db';
 import { DatabaseTransactionConnectionType } from 'slonik';
 
@@ -20,7 +20,9 @@ const challengeRouter = Router({ mergeParams: true })
     .get('/participants', getParticipants)
     .get('/pools', getPools)
     .get('/pools/:poolName', getPoolTitles)
-    .post('/pools/:poolName', checkCanAddTitle, newTitle)
+    .post('/pools/:poolName', checkCanManageTitle, newTitle)
+    .put('/titles/:titleId(\\d+)', checkCanManageTitle, editTitle)
+    .delete('/titles/:titleId(\\d+)', checkCanManageTitle, deleteTitle)
     .post('/pools', checkCanManageChallenge, newPool)
     .get('/rounds', getRounds)
     .get('/join', checkLoggedIn, joinChallenge)
