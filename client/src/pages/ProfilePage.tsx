@@ -8,6 +8,7 @@ import { fetchUserStats } from '../api';
 import DefaultLayout from '../components/layout/DefaultLayout';
 import { useProfileId } from '../hooks';
 import { Legend, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
+import Avatar from '../components/Avatar';
 
 export default function ProfilePage(): JSX.Element {
     const profileId = useProfileId();
@@ -30,8 +31,7 @@ export default function ProfilePage(): JSX.Element {
                             <Row>
                                 <Col lg="4" className="border-end">
                                     <h5 className="mb-3 text-center">{stats.user.name}</h5>
-                                    <img className="rounded-circle mx-auto d-block mb-3"
-                                        src={`https://cdn.discordapp.com/avatars/${stats.user.discordId}/${stats.user.avatarHash}?size=128`} />
+                                    <Avatar className="mx-auto d-block mb-3" user={stats.user} size={128} />
                                     <div className="awards">
                                         {stats.awards.map(x => <img className="award" src={x} />)}
                                     </div>
@@ -42,7 +42,7 @@ export default function ProfilePage(): JSX.Element {
                                             <td>
                                                 <strong className="title">AVG. SCORE</strong><br />
                                                 <FontAwesomeIcon icon={faWheelchair} size="2x" /><br />
-                                                <strong className="value">{stats.avgRate ?? '-'}</strong>
+                                                <strong className="value">{stats.avgRate?.toFixed(2) ?? '-'}</strong>
                                             </td>
                                             <td>
                                                 <strong className="title">COMPLETED</strong><br />

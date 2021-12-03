@@ -3,6 +3,7 @@ import { Nav, Navbar, Dropdown, Button } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
 import { useDispatch, useUser } from '../../hooks';
 import { logout } from '../../stateSlice';
+import Avatar from '../Avatar';
 
 export default function Header(): JSX.Element {
     const user = useUser();
@@ -27,9 +28,8 @@ export default function Header(): JSX.Element {
                         </Button>
                         :
                         <Dropdown className="ms-auto me-0 my-2 my-sm-0">
-                            <Dropdown.Toggle as="a" bsPrefix="p-0">
-                                <img className="rounded-circle"
-                                    src={`https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatarHash}?size=48`}></img>
+                            <Dropdown.Toggle as="a" bsPrefix="p-0" type="button">
+                                <Avatar user={user} size={48} />
                             </Dropdown.Toggle>
                             <Dropdown.Menu variant="dark" align="end">
                                 <Dropdown.Item onClick={() => dispatch(logout())}>Logout</Dropdown.Item>
