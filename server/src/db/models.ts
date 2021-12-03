@@ -741,6 +741,7 @@ export class UserStats implements api.UserStats {
     mostSniped: api.UserCount[];
     karma: number | null;
     awards: string[];
+    karmaHistory: api.KarmaDataPoint[];
 
     constructor(
         user: User,
@@ -752,6 +753,7 @@ export class UserStats implements api.UserStats {
         mostSniped: api.UserCount[],
         karma: number | null,
         awards: string[],
+        karmaHistory: api.KarmaDataPoint[]
     ) {
         this.user = user;
         this.numChallenges = numChallenges;
@@ -762,6 +764,7 @@ export class UserStats implements api.UserStats {
         this.mostSniped = mostSniped;
         this.karma = karma;
         this.awards = awards;
+        this.karmaHistory = karmaHistory;
     }
 
     static async fetch(db: CommonQueryMethodsType, userId: number): Promise<UserStats> {
@@ -831,6 +834,9 @@ export class UserStats implements api.UserStats {
             ) AS awards
             ORDER BY awards.time`);
 
+        const karmaHistory = await db.any<api.KarmaDataPoint>(sql`
+            SELECT karma, "time" FROM karma_history WHERE user_id = ${userId}`);
+
         return new UserStats(
             user,
             challengeStats.numChallenges,
@@ -840,7 +846,8 @@ export class UserStats implements api.UserStats {
             [...mostWatched],
             [...mostSniped],
             await KarmaHistory.fetchLastValue(db, userId),
-            [...awards]
+            [...awards],
+            [...karmaHistory]
         );
     }
 }

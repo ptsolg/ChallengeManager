@@ -132,6 +132,11 @@ export interface UserCount {
     count: number;
 }
 
+export interface KarmaDataPoint {
+    karma: number;
+    time: string;
+}
+
 export interface UserStats {
     user: User;
     numChallenges: number;
@@ -142,6 +147,7 @@ export interface UserStats {
     mostSniped: UserCount[];
     karma: number | null;
     awards: string[];
+    karmaHistory: KarmaDataPoint[];
 }
 
 export interface IdList {

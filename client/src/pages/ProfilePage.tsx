@@ -7,6 +7,7 @@ import { UserStats } from '../../../common/api/models';
 import { fetchUserStats } from '../api';
 import DefaultLayout from '../components/layout/DefaultLayout';
 import { useProfileId } from '../hooks';
+import { Legend, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 
 export default function ProfilePage(): JSX.Element {
     const profileId = useProfileId();
@@ -86,6 +87,18 @@ export default function ProfilePage(): JSX.Element {
                                     </table>
                                 </Col>
                             </Row>
+                        </Card.Body>
+                    </Card>
+                    <Card className="mt-2">
+                        <Card.Body>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={stats.karmaHistory}>
+                                    <XAxis dataKey="time" tickFormatter={(x: string) => x.slice(0, 7)} angle={-45} dy={15} height={60} />
+                                    <YAxis />
+                                    <Line dataKey="karma" />
+                                    <Legend verticalAlign="top" />
+                                </LineChart>
+                            </ResponsiveContainer>
                         </Card.Body>
                     </Card>
                 </Col>
