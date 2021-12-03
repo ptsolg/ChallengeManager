@@ -6,7 +6,7 @@ export interface User {
     id: number;
     discordId: string;
     name: string;
-    avatarHash: string | null;
+    avatarUrl: string | null;
 }
 
 export interface CreateChallengeParams {

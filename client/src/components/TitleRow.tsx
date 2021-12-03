@@ -5,6 +5,7 @@ import { EditTitleParams, TitleExt } from '../../../common/api/models';
 import { useChallenge, useUser } from '../hooks';
 import IconButton from './IconButton';
 import { deleteTitle, editTitle } from '../api';
+import ProfileLink from './ProfileLink';
 
 interface TitleRowProps {
     num: number;
@@ -75,7 +76,7 @@ export default function TitleRow({ num, title, setTitle, onDelete }: TitleRowPro
                     </td>
             }
 
-            <td>{title.proposer.name}</td>
+            <td><ProfileLink user={title.proposer} /></td>
             {controls}
         </tr>
     );

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Row, Col, Card, Table } from 'react-bootstrap';
 import DefaultLayout from '../components/layout/DefaultLayout';
+import ProfileLink from '../components/ProfileLink';
 import { useChallengeId, useDispatch, useParticipants } from '../hooks';
 import { fetchParticipants } from '../stateSlice';
 
@@ -33,7 +34,7 @@ export default function ParticipantsPage(): JSX.Element {
                                         participants.map((x, i) =>
                                             <tr>
                                                 <td scope="row">{i}</td>
-                                                <td>{x.user.name}</td>
+                                                <td><ProfileLink user={x.user} /></td>
                                                 <td>{x.karma}</td>
                                             </tr>)
                                     }

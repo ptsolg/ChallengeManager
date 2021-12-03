@@ -52,12 +52,12 @@ class Relation {
 }
 
 export class User extends Relation implements api.User {
-    static COLS = new Columns(['id', 'discord_id', 'color', 'name', 'avatar_hash']);
+    static COLS = new Columns(['id', 'discord_id', 'color', 'name', 'avatar_url']);
     id: number;
     discordId: string;
     color: string;
     name: string;
-    avatarHash: string | null;
+    avatarUrl: string | null;
 
     constructor(
         db: CommonQueryMethodsType,
@@ -65,14 +65,14 @@ export class User extends Relation implements api.User {
         discordId: string,
         color: string,
         name: string,
-        avatarHash: string | null
+        avatarUrl: string | null
     ) {
         super(db);
         this.id = id;
         this.discordId = discordId;
         this.color = color;
         this.name = name;
-        this.avatarHash = avatarHash;
+        this.avatarUrl = avatarUrl;
     }
 
     static fromRow(db: CommonQueryMethodsType, row: QueryResultRowType, p = ''): User {
@@ -81,7 +81,7 @@ export class User extends Relation implements api.User {
             nonNull(row, p + 'discord_id'),
             nonNull(row, p + 'color'),
             nonNull(row, p + 'name'),
-            maybeNull(row, p + 'avatar_hash'));
+            maybeNull(row, p + 'avatar_url'));
     }
 
     static require(db: CommonQueryMethodsType, id: number): Promise<User> {
@@ -93,21 +93,27 @@ export class User extends Relation implements api.User {
             });
     }
 
+    private static makeAvatarUrl(u: DiscordUser): string {
+        return `https://cdn.discordapp.com/avatars/${u.id}/${u.avatar}`;
+    }
+
     private static create(db: CommonQueryMethodsType, u: DiscordUser): Promise<User> {
         const color = '#FFFFFF';
         const name = `${u.username}#${u.discriminator}`;
+        const avatarUrl = this.makeAvatarUrl(u);
         return db.oneFirst<number>(sql`
-            INSERT INTO "user" (discord_id, color, name, avatar_hash)
-            VALUES (${u.id}, ${color}, ${name}, ${u.avatar})
+            INSERT INTO "user" (discord_id, color, name, avatar_url)
+            VALUES (${u.id}, ${color}, ${name}, ${avatarUrl})
             RETURNING id`)
-            .then(id => new User(db, id, u.id, color, name, u.avatar));
+            .then(id => new User(db, id, u.id, color, name, avatarUrl));
     }
 
     private update(u: DiscordUser): Promise<void> {
+        const avatarUrl = User.makeAvatarUrl(u);
         return this.db.query(sql`
             UPDATE "user" SET
                 name = ${`${u.username}#${u.discriminator}`},
-                avatar_hash = ${u.avatar}
+                avatar_url = ${avatarUrl}
             WHERE id = ${this.id}`).then(_ => { return; });
     }
 

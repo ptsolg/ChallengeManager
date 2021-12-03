@@ -6,6 +6,7 @@ import ManageRound from '../components/ManageRound';
 import { useChallengeId, useDispatch, useRounds, useChallenge } from '../hooks';
 import { fetchChallenge, fetchParticipants, fetchPools, fetchRounds } from '../stateSlice';
 import SwapTitles from '../components/SwapTitles';
+import ProfileLink from '../components/ProfileLink';
 
 export default function RoundsPage(): JSX.Element {
     const cid = useChallengeId();
@@ -97,7 +98,7 @@ export default function RoundsPage(): JSX.Element {
                                                                 null
                                                         }
                                                         <td>{i}</td>
-                                                        <td>{x.watcher.name}</td>
+                                                        <td><ProfileLink user={x.watcher} /></td>
                                                         <td>{x.title.name}</td>
                                                         <td>{x.score}</td>
                                                     </tr>)
