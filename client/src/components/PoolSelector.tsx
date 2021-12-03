@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ListGroup } from 'react-bootstrap';
 import { Pool } from '../../../common/api/models';
 import { usePools } from '../hooks';
+import PoolSelectorItem from './PoolSelectorItem';
 
 interface PoolSelectorProps {
     onSelect(pool: Pool): void;
@@ -18,7 +19,6 @@ export default function PoolSelector({ onSelect }: PoolSelectorProps): JSX.Eleme
 
     useEffect(() => {
         if (pools.length > 0) {
-            console.log('change', pool, pools);
             selectPool(pools[0]);
         }
     }, [pools]);
@@ -26,12 +26,10 @@ export default function PoolSelector({ onSelect }: PoolSelectorProps): JSX.Eleme
     return (
         <ListGroup>
             {pools.map(x =>
-                <ListGroup.Item
-                    type="button"
-                    active={pool?.id === x.id}
-                    onClick={() => selectPool(x)}>
-                    {x.name}
-                </ListGroup.Item>)}
+                <PoolSelectorItem
+                    pool={x}
+                    onClick={() => selectPool(x)}
+                    active={pool?.id === x.id} />)}
         </ListGroup>
     );
 }

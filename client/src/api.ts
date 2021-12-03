@@ -56,6 +56,14 @@ export async function newPool(challengeId: number, params: CreatePoolParams): Pr
     return api.post(`/challenge/${challengeId}/pools`, params, { withCredentials: true }).then(x => x.data);
 }
 
+export async function editPool(challengeId: number, poolName: string, params: CreatePoolParams): Promise<void> {
+    return api.put(`/challenge/${challengeId}/pools/${poolName}`, params, { withCredentials: true }).then(_ => { return; });
+}
+
+export async function deletePool(challengeId: number, poolName: string): Promise<void> {
+    return api.delete(`/challenge/${challengeId}/pools/${poolName}`, { withCredentials: true }).then(_ => { return; });
+}
+
 export async function fetchTitles(challengeId: number, poolName: string): Promise<TitleExt[]> {
     return api.get(`/challenge/${challengeId}/pools/${poolName}`).then(x => x.data);
 }

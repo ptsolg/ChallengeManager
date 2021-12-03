@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getChallenges, getChallenge, getParticipants, getPools, getRounds, newChallenge, joinChallenge, getClientChallenge, leaveChallenge, editChallenge, getPoolTitles, newPool, newTitle, startRound, finishRound, extendRound, rateTitle, swapTitles, randomSwapTitles, finishChallenge, editTitle, deleteTitle } from './controllers/challenge';
+import { getChallenges, getChallenge, getParticipants, getPools, getRounds, newChallenge, joinChallenge, getClientChallenge, leaveChallenge, editChallenge, getPoolTitles, newPool, newTitle, startRound, finishRound, extendRound, rateTitle, swapTitles, randomSwapTitles, finishChallenge, editTitle, deleteTitle, editPool, deletePool } from './controllers/challenge';
 import { handleLogin, handleLogout } from './controllers/auth';
 import { getLoggedInUser, getUser, getUserStats } from './controllers/user';
 import { checkCanManageTitle, checkCanManageChallenge, checkLoggedIn } from './middleware';
@@ -19,11 +19,13 @@ const challengeRouter = Router({ mergeParams: true })
     .put('/', checkCanManageChallenge, editChallenge)
     .get('/participants', getParticipants)
     .get('/pools', getPools)
+    .post('/pools', checkCanManageChallenge, newPool)
     .get('/pools/:poolName', getPoolTitles)
     .post('/pools/:poolName', checkCanManageTitle, newTitle)
+    .put('/pools/:poolName', checkCanManageChallenge, editPool)
+    .delete('/pools/:poolName', checkCanManageChallenge, deletePool)
     .put('/titles/:titleId(\\d+)', checkCanManageTitle, editTitle)
     .delete('/titles/:titleId(\\d+)', checkCanManageTitle, deleteTitle)
-    .post('/pools', checkCanManageChallenge, newPool)
     .get('/rounds', getRounds)
     .get('/join', checkLoggedIn, joinChallenge)
     .get('/leave', checkLoggedIn, withTransaction(leaveChallenge))

@@ -50,6 +50,18 @@ export const addPool = createAsyncThunk(
     ({ challengeId, params }: { challengeId: number, params: CreatePoolParams }) => api.newPool(challengeId, params)
 );
 
+export const editPool = createAsyncThunk(
+    'state/editPool',
+    ({ challengeId, name, params }: { challengeId: number, name: string, params: CreatePoolParams }) => {
+        return api.editPool(challengeId, name, params).then(_ => [name, params.name]);
+    }
+);
+
+export const deletePool = createAsyncThunk(
+    'state/deletePool',
+    ({ challengeId, name }: { challengeId: number, name: string }) => api.deletePool(challengeId, name).then(_ => name)
+);
+
 export const startRound = createAsyncThunk(
     'state/startRound',
     ({ challengeId, params }: { challengeId: number, params: StartRoundParams }) => api.startRound(challengeId, params)
@@ -236,6 +248,15 @@ const stateSlice = createSlice({
                 ...c,
                 ...action.payload
             };
+        },
+        [editPool.fulfilled.type]: (state, action: PayloadAction<[string, string]>) => {
+            const c = getChallenge(state);
+            const i = c.pools.findIndex(x => x.name === action.payload[0]);
+            c.pools[i].name = action.payload[1];
+        },
+        [deletePool.fulfilled.type]: (state, action: PayloadAction<string>) => {
+            const c = getChallenge(state);
+            c.pools = c.pools.filter(x => x.name !== action.payload);
         }
     }
 });

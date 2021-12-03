@@ -143,6 +143,24 @@ export async function newPool(req: Request, res: JsonResponse<api.Pool>): Promis
     return res.json(await c.addPool(params.name));
 }
 
+export async function editPool(req: Request, res: JsonResponse<api.Message>): Promise<Response> {
+    const params = getPoolParams(req);
+    const c = await Challenge.require(db, getCid(req));
+    Error.throwIf(c.finishTime !== null, 400, 'Challenge has ended');
+    const p = await c.requirePool(getPoolName(req));
+    p.name = params.name;
+    await p.update();
+    return res.json(Message.ok());
+}
+
+export async function deletePool(req: Request, res: JsonResponse<api.Message>): Promise<Response> {
+    const c = await Challenge.require(db, getCid(req));
+    Error.throwIf(c.finishTime !== null, 400, 'Challenge has ended');
+    const p = await c.requirePool(getPoolName(req));
+    await p.delete();
+    return res.json(Message.ok());
+}
+
 function getEditTitleParams(req: Request): api.EditTitleParams {
     return {
         name: nonNull(req, 'name'),

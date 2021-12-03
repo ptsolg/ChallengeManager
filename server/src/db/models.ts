@@ -449,6 +449,10 @@ export class Pool extends Relation implements api.Pool {
             WHERE pool_id = ${this.id} AND is_used = FALSE`)
             .then(result => result.rows.map(x => Title.fromRow(this.db, x)));
     }
+
+    delete(): Promise<void> {
+        return this.db.query(sql`DELETE FROM pool WHERE id = ${this.id}`).then(_ => { return; });
+    }
 }
 
 export class Participant extends Relation implements api.Participant {
